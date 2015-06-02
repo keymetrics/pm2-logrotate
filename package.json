@@ -8,6 +8,10 @@
     "pmx": "latest",
     "moment": "^2.10.3"
   },
+  "config": {
+    "days_interval" : 7,
+    "max_size" : 5242880
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
