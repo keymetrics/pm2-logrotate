@@ -2,16 +2,15 @@
   "name": "pm2-logrotate",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "dependencies" : {
-    "pm2" : "*",
-    "pmx" : "*",
-    "shelljs" : "*",
-    "logrotate-stream" : "*"
+  "main": "app.js",
+  "dependencies": {
+    "pm2": "latest",
+    "pmx": "latest",
+    "moment": "^2.10.3"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "MIT"
 }
