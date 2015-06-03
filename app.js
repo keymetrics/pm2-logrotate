@@ -27,6 +27,9 @@ function proceed(file) {
 }
 
 function proceed_file(file, force) {
+  if (!fs.existsSync(file))
+    return;
+
   var size = fs.statSync(file).size;
 
   if (size >= SIZE_LIMIT || force) {
