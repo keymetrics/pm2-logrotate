@@ -4,9 +4,14 @@ var pm2     = require('pm2');
 var moment  = require('moment');
 
 var conf = pmx.initModule();
-var WORKER_INTERVAL = 1000 * 10; // 10seconds
-var SIZE_LIMIT = 1024 * 1024 * 5; // 5MB
-var TODAY = moment().format('DD');
+var WORKER_INTERVAL = 1000 * 20; // 20seconds
+var SIZE_LIMIT = 1024 * 1024 * 10; // 10MB
+var INTERVAL_UNIT = 'DD'; // MM = months, DD = days, mm = minutes
+var INTERVAL = 1; // INTERVAL:1 * INTERVAL_UNIT:days
+                  // means it will cut files every 24H
+                  // eg : INTERVAL:2 and INTERVAL_UNIT:'mm' will cut files every 2 minutes
+
+var NOW = parseInt(moment().format(INTERVAL_UNIT));
 
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
@@ -38,13 +43,13 @@ function proceed_app(app, force) {
   proceed_file(err_file, force);
 }
 
-function day_has_changed() {
-  if (TODAY === moment().format('DD')) {
-    return false;
+function is_it_time_yet() {
+  if (NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT))) {
+    NOW = parseInt(moment().format(INTERVAL_UNIT));
+    return true;
   }
   else {
-    TODAY = moment().format('DD');
-    return true;
+    return false;
   }
 }
 
@@ -57,7 +62,10 @@ pm2.connect(function(err) {
     pm2.list(function(err, apps) {
       if (err) return console.error(err.stack || err);
 
-      if (day_has_changed())
+      proceed_file(process.env.HOME + '/.pm2/pm2.log', false);
+      proceed_file(process.env.HOME + '/.pm2/agent.log', false);
+
+      if (is_it_time_yet())
         apps.forEach(function(app) {proceed_app(app, true)});
       else
         apps.forEach(function(app) {proceed_app(app, false)});
