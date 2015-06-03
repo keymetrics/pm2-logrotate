@@ -9,7 +9,7 @@
     "moment": "^2.10.3"
   },
   "config": {
-    "interval_unit" : 'DD',
+    "interval_unit" : "DD",
     "interval" : 1,
     "max_size" : 5242880
   },
