@@ -1,6 +1,6 @@
 {
   "name": "pm2-logrotate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "app.js",
   "dependencies": {
@@ -9,7 +9,8 @@
     "moment": "^2.10.3"
   },
   "config": {
-    "days_interval" : 7,
+    "interval_unit" : 'DD',
+    "interval" : 1,
     "max_size" : 5242880
   },
   "scripts": {

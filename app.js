@@ -5,9 +5,9 @@ var moment  = require('moment');
 
 var conf = pmx.initModule();
 var WORKER_INTERVAL = 1000 * 20; // 20seconds
-var SIZE_LIMIT = 1024 * 1024 * 10; // 10MB
-var INTERVAL_UNIT = 'DD'; // MM = months, DD = days, mm = minutes
-var INTERVAL = 1; // INTERVAL:1 * INTERVAL_UNIT:days
+var SIZE_LIMIT = parseInt(conf.max_size || 1024 * 1024 * 10); // 10MB
+var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
+var INTERVAL = parseInt(conf.interval || 1); // INTERVAL:1 * INTERVAL_UNIT:days
                   // means it will cut files every 24H
                   // eg : INTERVAL:2 and INTERVAL_UNIT:'mm' will cut files every 2 minutes
 
@@ -44,7 +44,10 @@ function proceed_app(app, force) {
 }
 
 function is_it_time_yet() {
-  if (NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT))) {
+  var max_value = INTERVAL_UNIT == 'MM' ? 12 : 60;
+
+  if (NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT))
+      || NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT)) - max_value) {
     NOW = parseInt(moment().format(INTERVAL_UNIT));
     return true;
   }
