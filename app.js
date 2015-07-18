@@ -76,7 +76,7 @@ pm2.connect(function(err) {
       else
         apps.forEach(function(app) {proceed_app(app, false)});
     });
-    setTimeout(worker, WORKER_INTERVAL);
+    setTimeout(worker, (WORKER_INTERVAL - (Date.now() % WORKER_INTERVAL)));
   };
   worker();
 });
