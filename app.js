@@ -12,10 +12,15 @@ var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 * INTERVAL_UNIT:days
                   // eg : INTERVAL:2 and INTERVAL_UNIT:'mm' will cut files every 2 minutes
 
 var NOW = parseInt(moment().format(INTERVAL_UNIT));
-
+var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
+var durationLegend = {
+  MM: 'M',
+  DD: 'd',
+  mm: 'm'
+};
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().format('MM-DD-YYYY-HH-mm-ss') + '.log';
+    + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT.substring(0, DATE_FORMAT.lastIndexOf(INTERVAL_UNIT)+2)) + '.log';
 
   var buffer = fs.readFileSync(file);
   fs.writeFileSync(final_name, buffer);
