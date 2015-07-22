@@ -4,7 +4,7 @@ var pm2     = require('pm2');
 var moment  = require('moment');
 
 var conf = pmx.initModule();
-var WORKER_INTERVAL = 1000 * 20; // 20seconds
+var WORKER_INTERVAL = moment.duration(20, 'seconds').asMilliseconds();
 var SIZE_LIMIT = parseInt(conf.max_size) || 1024 * 1024 * 10; // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 * INTERVAL_UNIT:days
