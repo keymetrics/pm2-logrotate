@@ -33,7 +33,7 @@ function delete_old(file) {
     rotated_files.sort().reverse();
     
     for (var i = rotated_files.length - 1; i >= 0; i--) {
-      if (RETAIN >= i) { break; }
+      if (RETAIN > i) { break; }
       fs.unlink(rotated_files[i]);
       console.log('"' + rotated_files[i] + '" has been deleted');
     };
