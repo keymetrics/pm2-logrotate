@@ -2,6 +2,7 @@ var fs      = require('fs');
 var pmx     = require('pmx');
 var pm2     = require('pm2');
 var moment  = require('moment');
+var Rolex   = require('rolex');
 
 var conf = pmx.initModule();
 var WORKER_INTERVAL = moment.duration(20, 'seconds').asMilliseconds();
@@ -106,7 +107,11 @@ pm2.connect(function(err) {
       else
         apps.forEach(function(app) {proceed_app(app, false)});
     });
-    setTimeout(worker, (WORKER_INTERVAL - (Date.now() % WORKER_INTERVAL)));
   };
-  worker();
+  
+  setTimeout(function() {
+    setInterval(function(){ 
+      worker();
+    }, WORKER_INTERVAL);
+  }, (WORKER_INTERVAL - (Date.now() % WORKER_INTERVAL)));
 });

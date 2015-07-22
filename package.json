@@ -4,9 +4,11 @@
   "description": "",
   "main": "app.js",
   "dependencies": {
-    "pm2": "latest",
-    "pmx": "latest",
-    "moment": "^2.10.3"
+    "bower": "1.4.x",
+    "moment": "2.10.x",
+    "pm2": "0.14.x",
+    "pmx": "0.3.x",
+    "rolex": "0.0.x"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
