@@ -14,6 +14,7 @@ There are 3 values that you need to configure :
 - max_size (Defaults to 10MB): When a file size becomes higher than this value it will split it.
 - interval (Defaults to 1):
 - interval_unit (Defaults to 'DD'): interval and interval_unit works together, it means if you have interval_unit='DD' and interval=3, it will split the logs every 3 days.
+- retain (Defaults to all): This number is the number of rotated logs that are keep at any one time, it means that if you have retain = 7 you will have at most 7 rotated logs and your current one.
 
 Possible values for interval_unit are 'MM' (months), 'DD' (days), 'mm' (minutes).
 eg: interval:9, interval_unit:'mm' will split the logs every 9 minutes.

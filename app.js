@@ -2,20 +2,47 @@ var fs      = require('fs');
 var pmx     = require('pmx');
 var pm2     = require('pm2');
 var moment  = require('moment');
+var Rolex   = require('rolex');
 
 var conf = pmx.initModule();
-var WORKER_INTERVAL = 1000 * 20; // 20seconds
-var SIZE_LIMIT = parseInt(conf.max_size || 1024 * 1024 * 10); // 10MB
+var WORKER_INTERVAL = moment.duration(20, 'seconds').asMilliseconds();
+var SIZE_LIMIT = parseInt(conf.max_size) || 1024 * 1024 * 10; // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
-var INTERVAL = parseInt(conf.interval || 1); // INTERVAL:1 * INTERVAL_UNIT:days
-                  // means it will cut files every 24H
-                  // eg : INTERVAL:2 and INTERVAL_UNIT:'mm' will cut files every 2 minutes
+var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
+var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
 
 var NOW = parseInt(moment().format(INTERVAL_UNIT));
+var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
+var durationLegend = {
+  MM: 'M',
+  DD: 'd',
+  mm: 'm'
+};
+
+function delete_old(file) {
+  var fileBaseName = file.substr(0, file.length - 4) + '__';
+  var path = file.substring(0, file.lastIndexOf("/")+1);
+
+  fs.readdir(path, function(err, files) {
+    var rotated_files = []
+    for (var i = 0, len = files.length; i < len; i++) {
+      if (fileBaseName === ((path + files[i]).substr(0, fileBaseName.length))) {
+        rotated_files.push(path + files[i])
+      }
+    }
+    rotated_files.sort().reverse();
+    
+    for (var i = rotated_files.length - 1; i >= 0; i--) {
+      if (RETAIN > i) { break; }
+      fs.unlink(rotated_files[i]);
+      console.log('"' + rotated_files[i] + '" has been deleted');
+    };
+  });
+}
 
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().format('MM-DD-YYYY-HH-mm-ss') + '.log';
+    + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT.substring(0, DATE_FORMAT.lastIndexOf(INTERVAL_UNIT)+2)) + '.log';
 
   var buffer = fs.readFileSync(file);
   fs.writeFileSync(final_name, buffer);
@@ -24,6 +51,10 @@ function proceed(file) {
   fs.truncateSync(file, 0);
 
   console.log('"' + final_name + '" has been created');
+  
+  if (RETAIN !== undefined) {
+    delete_old(file); 
+  }
 }
 
 function proceed_file(file, force) {
@@ -76,7 +107,11 @@ pm2.connect(function(err) {
       else
         apps.forEach(function(app) {proceed_app(app, false)});
     });
-    setTimeout(worker, WORKER_INTERVAL);
   };
-  worker();
+  
+  setTimeout(function() {
+    setInterval(function(){ 
+      worker();
+    }, WORKER_INTERVAL);
+  }, (WORKER_INTERVAL - (Date.now() % WORKER_INTERVAL)));
 });
