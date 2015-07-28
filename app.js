@@ -24,6 +24,10 @@ function delete_old(file) {
   var fileBaseName = file.substr(0, file.length - 4) + '__';
   var readPath = path.dirname(fileBaseName); // file.substring(0, file.lastIndexOf("/")+1);
 
+  if (!readPath) {
+      return;
+  }
+
   fs.readdir(readPath, function(err, files) {
     var rotated_files = []
     for (var i = 0, len = files.length; i < len; i++) {
