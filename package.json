@@ -21,6 +21,6 @@
   "bugs": {
     "url": "https://github.com/pm2-hive/pm2-logrotate/issues"
   },
-  "homepage": "https://github.com/pm2-hive/pm2-logrotate"
+  "homepage": "https://github.com/pm2-hive/pm2-logrotate",
   "license": "MIT"
 }
