@@ -1,6 +1,6 @@
 {
   "name": "pm2-logrotate",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "app.js",
   "dependencies": {
@@ -13,6 +13,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Joni SHKURTI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pm2-hive/pm2-logrotate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pm2-hive/pm2-logrotate/issues"
+  },
+  "homepage": "https://github.com/pm2-hive/pm2-logrotate"
   "license": "MIT"
 }
