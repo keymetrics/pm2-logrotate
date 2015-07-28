@@ -1,4 +1,5 @@
 var fs      = require('fs');
+var path    = require('path');
 var pmx     = require('pmx');
 var pm2     = require('pm2');
 var moment  = require('moment');
@@ -21,17 +22,17 @@ var durationLegend = {
 
 function delete_old(file) {
   var fileBaseName = file.substr(0, file.length - 4) + '__';
-  var path = file.substring(0, file.lastIndexOf("/")+1);
+  var readPath = path.join(path.dirname(fileBaseName), "/");
 
-  fs.readdir(path, function(err, files) {
+  fs.readdir(readPath, function(err, files) {
     var rotated_files = []
     for (var i = 0, len = files.length; i < len; i++) {
-      if (fileBaseName === ((path + files[i]).substr(0, fileBaseName.length))) {
-        rotated_files.push(path + files[i])
+      if (fileBaseName === ((readPath + files[i]).substr(0, fileBaseName.length))) {
+        rotated_files.push(readPath + files[i])
       }
     }
     rotated_files.sort().reverse();
-    
+
     for (var i = rotated_files.length - 1; i >= 0; i--) {
       if (RETAIN > i) { break; }
       fs.unlink(rotated_files[i]);
@@ -51,9 +52,9 @@ function proceed(file) {
   fs.truncateSync(file, 0);
 
   console.log('"' + final_name + '" has been created');
-  
+
   if (RETAIN !== undefined) {
-    delete_old(file); 
+    delete_old(file);
   }
 }
 
@@ -108,9 +109,9 @@ pm2.connect(function(err) {
         apps.forEach(function(app) {proceed_app(app, false)});
     });
   };
-  
+
   setTimeout(function() {
-    setInterval(function(){ 
+    setInterval(function(){
       worker();
     }, WORKER_INTERVAL);
   }, (WORKER_INTERVAL - (Date.now() % WORKER_INTERVAL)));
