@@ -1,10 +1,9 @@
 {
   "name": "pm2-logrotate",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "",
   "main": "app.js",
   "dependencies": {
-    "bower": "1.4.x",
     "moment": "2.10.x",
     "pm2": "0.14.x",
     "pmx": "0.3.x",
