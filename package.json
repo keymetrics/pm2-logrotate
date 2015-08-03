@@ -1,6 +1,6 @@
 {
   "name": "pm2-logrotate",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
   "main": "app.js",
   "dependencies": {
@@ -22,5 +22,12 @@
     "url": "https://github.com/pm2-hive/pm2-logrotate/issues"
   },
   "homepage": "https://github.com/pm2-hive/pm2-logrotate",
-  "license": "MIT"
+  "license": "MIT",
+
+  "config": {
+    "interval_unit" : "DD",
+    "interval" : 1,
+    "max_size" : 5242880,
+    "retain" : "none"
+  }
 }
