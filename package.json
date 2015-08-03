@@ -23,7 +23,12 @@
   },
   "homepage": "https://github.com/pm2-hive/pm2-logrotate",
   "license": "MIT",
-
+  "apps": [
+    {
+      "name": "pm2-logrotate",
+      "script": "app.js"
+    }
+  ],
   "config": {
     "interval_unit" : "DD",
     "interval" : 1,

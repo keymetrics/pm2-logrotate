@@ -5,7 +5,15 @@ var pm2     = require('pm2');
 var moment  = require('moment');
 var Rolex   = require('rolex');
 
-var conf = pmx.initModule();
+var conf = pmx.initModule({
+
+  widget : {
+    type             : 'generic',
+    logo             : 'http://serverental.com/server-rental/wp-content/uploads/2013/12/DellPowerEdger510Server2U2-socketrackserver.png'
+  }
+});
+
+
 var WORKER_INTERVAL = moment.duration(20, 'seconds').asMilliseconds();
 var SIZE_LIMIT = parseInt(conf.max_size) || 1024 * 1024 * 10; // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
