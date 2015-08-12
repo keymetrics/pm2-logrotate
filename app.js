@@ -28,6 +28,8 @@ var durationLegend = {
   mm: 'm'
 };
 
+var gl_file_list = [];
+
 function delete_old(file) {
   var fileBaseName = file.substr(0, file.length - 4) + '__';
   var readPath = path.join(path.dirname(fileBaseName), "/");
@@ -70,9 +72,11 @@ function proceed_file(file, force) {
   if (!fs.existsSync(file))
     return;
 
+  gl_file_list.push(file);
+
   var size = fs.statSync(file).size;
 
-  if (size >= SIZE_LIMIT || force) {
+  if (size > 0 && (size >= SIZE_LIMIT || force)) {
     proceed(file);
   }
 }
@@ -120,7 +124,12 @@ pm2.connect(function(err) {
 
   setTimeout(function() {
     setInterval(function(){
+      gl_file_list = [];
       worker();
     }, WORKER_INTERVAL);
   }, (WORKER_INTERVAL - (Date.now() % WORKER_INTERVAL)));
+});
+
+pmx.action('list files', function(reply) {
+  return reply(gl_file_list);
 });
