@@ -9,7 +9,19 @@ var conf = pmx.initModule({
 
   widget : {
     type             : 'generic',
-    logo             : 'https://blog.fi-xifi.eu/wp-content/uploads/2013/11/server-cloud-slice-icon.png'
+    logo             : 'http://web.townsendsecurity.com/Portals/15891/images/logging.png',
+    theme            : ['#111111', '#1B2228', '#31C2F1', '#807C7C'],
+    el : {
+      probes  : false,
+      actions : false
+    },
+
+    block : {
+      issues  : false,
+      cpu: false,
+      mem: false,
+      actions : true
+    }
   }
 });
 
