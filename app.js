@@ -18,8 +18,8 @@ var conf = pmx.initModule({
 
     block : {
       issues  : false,
-      cpu: false,
-      mem: false,
+      cpu: true,
+      mem: true,
       actions : true
     }
   }
@@ -67,17 +67,17 @@ function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
     + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT.substring(0, DATE_FORMAT.lastIndexOf(INTERVAL_UNIT)+2)) + '.log';
 
-  var buffer = fs.readFileSync(file);
-  fs.writeFileSync(final_name, buffer);
-  buffer = null;
+	var readStream = fs.createReadStream(file);
+	var writeStream = fs.createWriteStream(final_name);
+	readStream.pipe(writeStream);
+	readStream.on('end', function() {
+		fs.truncateSync(file, 0);
+		console.log('"' + final_name + '" has been created');
 
-  fs.truncateSync(file, 0);
-
-  console.log('"' + final_name + '" has been created');
-
-  if (RETAIN !== undefined) {
-    delete_old(file);
-  }
+		if (RETAIN !== undefined) {
+			delete_old(file);
+		}
+	});
 }
 
 function proceed_file(file, force) {

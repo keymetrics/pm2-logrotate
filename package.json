@@ -1,12 +1,12 @@
 {
   "name": "pm2-logrotate",
-  "version": "1.0.9",
-  "description": "",
+  "version": "1.1.0",
+  "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
   "dependencies": {
     "moment": "2.10.x",
-    "pm2": "0.14.x",
-    "pmx": "0.3.x",
+    "pm2": "latest",
+    "pmx": "latest",
     "rolex": "0.0.x"
   },
   "scripts": {
