@@ -18,8 +18,8 @@ var conf = pmx.initModule({
 
     block : {
       issues  : false,
-      cpu: true,
-      mem: true,
+      cpu: false,
+      mem: false,
       actions : true
     }
   }
