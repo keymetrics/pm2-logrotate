@@ -26,8 +26,8 @@ var conf = pmx.initModule({
 });
 
 
-var WORKER_INTERVAL = moment.duration(20, 'seconds').asMilliseconds();
-var SIZE_LIMIT = parseInt(conf.max_size) || 1024 * 1024 * 10; // 10MB
+var WORKER_INTERVAL = moment.duration(1, 'minutes').asMilliseconds();
+var SIZE_LIMIT = get_limit_size(); // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
 var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
@@ -41,6 +41,20 @@ var durationLegend = {
 };
 
 var gl_file_list = [];
+
+function get_limit_size() {
+  if (conf.max_size == '')
+    return (1024 * 1024 * 10);
+  if (typeof(conf.max_size) !== 'string')
+      conf.max_size = conf.max_size.toString();
+  if (conf.max_size.slice(-1) === 'G')
+    return (parseInt(conf.max_size) * 1024 * 1024 * 1024);
+  if (conf.max_size.slice(-1) === 'M')
+    return (parseInt(conf.max_size) * 1024 * 1024);
+  if (conf.max_size.slice(-1) === 'K')
+    return (parseInt(conf.max_size) * 1024);
+  return parseInt(conf.max_size);
+}
 
 function delete_old(file) {
   var fileBaseName = file.substr(0, file.length - 4) + '__';
@@ -68,7 +82,7 @@ function proceed(file) {
     + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT.substring(0, DATE_FORMAT.lastIndexOf(INTERVAL_UNIT)+2)) + '.log';
 
 	var readStream = fs.createReadStream(file);
-	var writeStream = fs.createWriteStream(final_name);
+	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
 	readStream.pipe(writeStream);
 	readStream.on('end', function() {
 		fs.truncateSync(file, 0);

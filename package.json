@@ -30,8 +30,8 @@
   ],
   "config": {
     "interval_unit" : "DD",
-    "interval" : 1,
-    "max_size" : 10485760,
+    "interval" : "1",
+    "max_size" : "10M",
     "retain" : "none"
   }
 }
