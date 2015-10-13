@@ -79,7 +79,7 @@ function delete_old(file) {
 
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT.substring(0, DATE_FORMAT.lastIndexOf(INTERVAL_UNIT)+2)) + '.log';
+    + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT) + '.log';
 
 	var readStream = fs.createReadStream(file);
 	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
