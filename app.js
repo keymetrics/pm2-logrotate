@@ -26,7 +26,7 @@ var conf = pmx.initModule({
 });
 
 
-var WORKER_INTERVAL = moment.duration(1, 'minutes').asMilliseconds();
+var WORKER_INTERVAL = moment.duration(50, 'seconds').asMilliseconds();
 var SIZE_LIMIT = get_limit_size(); // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
