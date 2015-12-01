@@ -121,7 +121,7 @@ function proceed_app(app, force) {
 
 function is_it_time_yet() {
   var NOW = moment().startOf(MOMENT_UNIT);
-  if (NOW.diff(BEGIN, MOMENT_UNIT) > INTERVAL) {
+  if (NOW.diff(BEGIN, MOMENT_UNIT) >= INTERVAL) {
 	  BEGIN = NOW;
 	  return true;
   }
