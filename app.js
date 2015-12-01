@@ -31,7 +31,7 @@ var SIZE_LIMIT = get_limit_size(); // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
 var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
-
+var FILE_NAME_DATE = conf.file_name_date || 'old';
 
 var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
 var durationLegend = {
@@ -81,8 +81,14 @@ function delete_old(file) {
 }
 
 function proceed(file) {
+  var file_name_date = moment();
+  
+  if (FILE_NAME_DATE === 'old') {
+	  file_name_date.subtract(1, MOMENT_UNIT);
+  }
+   
   var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().subtract(1, MOMENT_UNIT).format(DATE_FORMAT) + '.log';
+    + file_name_date.format(DATE_FORMAT) + '.log';
 
 	var readStream = fs.createReadStream(file);
 	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
