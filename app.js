@@ -31,14 +31,17 @@ var SIZE_LIMIT = get_limit_size(); // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
 var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
+var FILE_NAME_DATE = conf.file_name_date || 'old';
 
-var NOW = parseInt(moment().format(INTERVAL_UNIT));
 var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
 var durationLegend = {
   MM: 'M',
   DD: 'd',
   mm: 'm'
 };
+
+var MOMENT_UNIT = durationLegend[INTERVAL_UNIT];
+var BEGIN = moment().startOf(MOMENT_UNIT);
 
 var gl_file_list = [];
 
@@ -78,8 +81,14 @@ function delete_old(file) {
 }
 
 function proceed(file) {
+  var file_name_date = moment();
+  
+  if (FILE_NAME_DATE === 'old') {
+	  file_name_date.subtract(1, MOMENT_UNIT);
+  }
+   
   var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT) + '.log';
+    + file_name_date.format(DATE_FORMAT) + '.log';
 
 	var readStream = fs.createReadStream(file);
 	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
@@ -117,15 +126,13 @@ function proceed_app(app, force) {
 }
 
 function is_it_time_yet() {
-  var max_value = INTERVAL_UNIT == 'MM' ? 12 : 60;
-
-  if (NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT))
-      || NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT)) - max_value) {
-    NOW = parseInt(moment().format(INTERVAL_UNIT));
-    return true;
+  var NOW = moment().startOf(MOMENT_UNIT);
+  if (NOW.diff(BEGIN, MOMENT_UNIT) >= INTERVAL) {
+	  BEGIN = NOW;
+	  return true;
   }
   else {
-    return false;
+	  return false;
   }
 }
 
