@@ -95,7 +95,7 @@ function proceed(file) {
 }
 
 function proceed_file(file, force) {
-  if (!fs.existsSync(file))
+  if (!fs.existsSync(file) || gl_file_list.indexOf(file) !== -1)
     return;
 
   gl_file_list.push(file);
@@ -111,9 +111,11 @@ function proceed_app(app, force) {
   // Get error and out file
   var out_file = app.pm2_env.pm_out_log_path;
   var err_file = app.pm2_env.pm_err_log_path;
+  var std_file = app.pm2_env.pm_log_path;
 
   proceed_file(out_file, force);
   proceed_file(err_file, force);
+  proceed_file(std_file, force);
 }
 
 function is_it_time_yet() {
