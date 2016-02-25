@@ -4,6 +4,7 @@ var pmx     = require('pmx');
 var pm2     = require('pm2');
 var moment  = require('moment');
 var Rolex   = require('rolex');
+var spawn   = require('child_process').spawn;
 
 var conf = pmx.initModule({
 
@@ -31,6 +32,8 @@ var SIZE_LIMIT = get_limit_size(); // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
 var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
+var ARCHIVE_CMD = 'gzip';
+
 
 var NOW = parseInt(moment().format(INTERVAL_UNIT));
 var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
@@ -87,11 +90,18 @@ function proceed(file) {
 	readStream.on('end', function() {
 		fs.truncateSync(file, 0);
 		console.log('"' + final_name + '" has been created');
-
+        console.log('"' + final_name + '" trying to archive');
+        archive(final_name, function() {});
 		if (RETAIN !== undefined) {
 			delete_old(file);
 		}
 	});
+}
+
+function archive(file, callback) {
+    var child = spawn(ARCHIVE_CMD, [file]);
+    child.stdout.on('end', callback);
+    child.stdout.on('error', callback);
 }
 
 function proceed_file(file, force) {
