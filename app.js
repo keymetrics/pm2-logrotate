@@ -111,9 +111,11 @@ function proceed_app(app, force) {
   // Get error and out file
   var out_file = app.pm2_env.pm_out_log_path;
   var err_file = app.pm2_env.pm_err_log_path;
+  var cus_file = app.pm2_env.pm_log_path;
 
   proceed_file(out_file, force);
   proceed_file(err_file, force);
+  proceed_file(cus_file, force);
 }
 
 function is_it_time_yet() {
