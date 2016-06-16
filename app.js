@@ -31,6 +31,7 @@ var SIZE_LIMIT = get_limit_size(); // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
 var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
+var WHITE_LIST = conf.white_list || [''];
 
 var NOW = parseInt(moment().format(INTERVAL_UNIT));
 var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
@@ -81,6 +82,7 @@ function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
     + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT) + '.log';
 
+    /* if log-file is big, pipe duration will longer than interval-time
 	var readStream = fs.createReadStream(file);
 	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
 	readStream.pipe(writeStream);
@@ -92,6 +94,16 @@ function proceed(file) {
 			delete_old(file);
 		}
 	});
+    */
+
+    fs.rename(file, final_name, function() {
+        fs.writeFile(file, '', 'utf8', function() {
+            console.log('"' + final_name + '" has been created');
+            if (RETAIN !== undefined) {
+                delete_old(file);
+            }
+        })
+    });
 }
 
 function proceed_file(file, force) {
@@ -117,7 +129,9 @@ function proceed_app(app, force) {
 }
 
 function is_it_time_yet() {
+  //'DD' 24
   var max_value = INTERVAL_UNIT == 'MM' ? 12 : 60;
+  max_value = INTERVAL_UNIT == 'DD' ? 24 : 60;
 
   if (NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT))
       || NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT)) - max_value) {
@@ -141,10 +155,18 @@ pm2.connect(function(err) {
       proceed_file(process.env.HOME + '/.pm2/pm2.log', false);
       proceed_file(process.env.HOME + '/.pm2/agent.log', false);
 
+      /*
       if (is_it_time_yet())
         apps.forEach(function(app) {proceed_app(app, true)});
       else
         apps.forEach(function(app) {proceed_app(app, false)});
+      */
+
+      // add no-need-cut app
+      apps.forEach(function(app) {
+        if (WHITE_LIST.indexOf(app.name) > -1) return;
+        proceed_app(app, is_it_time_yet() ? true: false)
+      });
     });
   };
 
