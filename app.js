@@ -82,28 +82,59 @@ function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
     + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT) + '.log';
 
-    /* if log-file is big, pipe duration will longer than interval-time
-	var readStream = fs.createReadStream(file);
-	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
-	readStream.pipe(writeStream);
-	readStream.on('end', function() {
-		fs.truncateSync(file, 0);
-		console.log('"' + final_name + '" has been created');
+    function pipeNew(final_name) {
+        // if log-file is big, pipe duration will longer than interval-time
+        var readStream = fs.createReadStream(file);
+        var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
+        readStream.pipe(writeStream);
+        readStream.on('end', function() {
+            fs.truncateSync(file, 0);
+            console.log('"' + final_name + '" has been created');
 
-		if (RETAIN !== undefined) {
-			delete_old(file);
-		}
-	});
-    */
+            if (RETAIN !== undefined) {
+                delete_old(file);
+            }
+        });
+    }
 
+    //app-pid__2016-06-16-14-44
+    var fileName = final_name.slice(final_name.lastIndexOf('/') + 1, final_name.length).replace('.log', '');
+    var path = file.slice(0, final_name.lastIndexOf('/'));
+    fs.readdir(path, function(err, files) {
+        //get log versions
+        var versions = files.map(function(f) {
+            var reg = new RegExp(fileName + '(__(\\d+))?\\.log');
+            console.log(reg);
+            var matchs = f.match(reg);
+            if (matchs && matchs.length == 3) {
+                return parseInt(matchs[2] || 0);
+            }
+            return ''
+        }).filter(function(i) {
+            return i !== '' && !isNaN(i);
+        }).sort(function(a, b) {
+            return a < b
+        });
+
+        if (versions.length) {
+            //app-pid__2016-06-15__1.log
+            final_name = path + '/' + fileName + '__' + (versions[0] + 1) + '.log';
+        }
+
+        pipeNew(final_name);
+    });
+
+    /*
     fs.rename(file, final_name, function() {
         fs.writeFile(file, '', 'utf8', function() {
+            pm2.flush()
             console.log('"' + final_name + '" has been created');
             if (RETAIN !== undefined) {
                 delete_old(file);
             }
         })
     });
+    */
 }
 
 function proceed_file(file, force) {
@@ -164,6 +195,7 @@ pm2.connect(function(err) {
 
       // add no-need-cut app
       apps.forEach(function(app) {
+          console.log(WHITE_LIST, app.name, WHITE_LIST.indexOf(app.name), '-------------');
         if (WHITE_LIST.indexOf(app.name) > -1) return;
         proceed_app(app, is_it_time_yet() ? true: false)
       });
