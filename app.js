@@ -104,7 +104,6 @@ function proceed(file) {
         //get log versions
         var versions = files.map(function(f) {
             var reg = new RegExp(fileName + '(__(\\d+))?\\.log');
-            console.log(reg);
             var matchs = f.match(reg);
             if (matchs && matchs.length == 3) {
                 return parseInt(matchs[2] || 0);
@@ -193,7 +192,6 @@ pm2.connect(function(err) {
 
       // add no-need-cut app
       apps.forEach(function(app) {
-          console.log(WHITE_LIST, app.name, WHITE_LIST.indexOf(app.name), '-------------');
         if (WHITE_LIST.indexOf(app.name) > -1) return;
         proceed_app(app, is_it_time_yet() ? true: false)
       });
