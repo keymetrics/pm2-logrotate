@@ -160,9 +160,7 @@ function proceed_app(app, force) {
 }
 
 function is_it_time_yet() {
-  //'DD' 24
   var max_value = INTERVAL_UNIT == 'MM' ? 12 : 60;
-  max_value = INTERVAL_UNIT == 'DD' ? 24 : 60;
 
   if (NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT))
       || NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT)) - max_value) {
