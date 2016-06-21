@@ -34,6 +34,6 @@
     "interval" : "1",
     "max_size" : "10M",
     "retain" : "none",
-    "white-list": ["pm2-logrotate"]
+    "white_list": ["pm2-logrotate"]
   }
 }
