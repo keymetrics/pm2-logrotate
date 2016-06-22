@@ -31,7 +31,7 @@ var SIZE_LIMIT = get_limit_size(); // 10MB
 var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
 var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
 var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
-var WHITE_LIST = conf.white_list || [''];
+var WHITE_LIST = conf.white_list || '';
 
 var NOW = parseInt(moment().format(INTERVAL_UNIT));
 var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
@@ -192,7 +192,7 @@ pm2.connect(function(err) {
 
       // add no-need-cut app
       apps.forEach(function(app) {
-        if (WHITE_LIST.indexOf(app.name) > -1) return;
+        if (WHITE_LIST && WHITE_LIST.indexOf(app.name) > -1) return;
         proceed_app(app, is_it_time_yet() ? true: false)
       });
     });
