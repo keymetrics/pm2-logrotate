@@ -25,13 +25,15 @@
   "apps": [
     {
       "name": "pm2-logrotate",
-      "script": "app.js"
+      "script": "app.js",
+      "merge_logs": true
     }
   ],
   "config": {
     "interval_unit" : "DD",
     "interval" : "1",
     "max_size" : "10M",
-    "retain" : "none"
+    "retain" : "none",
+    "white_list": ["pm2-logrotate"]
   }
 }
