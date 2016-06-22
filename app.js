@@ -183,18 +183,16 @@ pm2.connect(function(err) {
       proceed_file(process.env.HOME + '/.pm2/pm2.log', false);
       proceed_file(process.env.HOME + '/.pm2/agent.log', false);
 
-      /*
       if (is_it_time_yet())
-        apps.forEach(function(app) {proceed_app(app, true)});
+        apps.forEach(function(app) {
+          if (WHITE_LIST && WHITE_LIST.indexOf(app.name) > -1) return;
+          proceed_app(app, true)
+        });
       else
-        apps.forEach(function(app) {proceed_app(app, false)});
-      */
-
-      // add no-need-cut app
-      apps.forEach(function(app) {
-        if (WHITE_LIST && WHITE_LIST.indexOf(app.name) > -1) return;
-        proceed_app(app, is_it_time_yet() ? true: false)
-      });
+        apps.forEach(function(app) {
+          if (WHITE_LIST && WHITE_LIST.indexOf(app.name) > -1) return;
+          proceed_app(app, false)
+        });
     });
   };
 
