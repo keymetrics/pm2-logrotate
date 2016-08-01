@@ -1,13 +1,17 @@
 {
   "name": "pm2-logrotate",
-  "version": "1.3.1",
+  "version": "2.0.0",
   "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
+  "devDependencies": {
+    "should"  : "*",
+    "mocha"   : "*"
+  },
   "dependencies": {
-    "moment": "2.10.x",
+    "moment-timezone": "0.5.5",
+    "node-schedule": "1.1.1",
     "pm2": "latest",
-    "pmx": "latest",
-    "rolex": "0.0.x"
+    "pmx": "latest"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -29,9 +33,11 @@
     }
   ],
   "config": {
-    "interval_unit" : "DD",
-    "interval" : "1",
-    "max_size" : "10M",
-    "retain" : "none"
+    "max_size": "10M",
+    "retain": "all",
+    "compress": "false",
+    "dateFormat": "YYYY-MM-DD_HH-mm-ss",
+    "workerInterval": "30",
+    "rotateInterval": "0 0 * * *"
   }
 }

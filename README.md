@@ -9,20 +9,30 @@ PM2 module to automatically rotate logs of processes managed by PM2.
 
 ## Configure
 
-There are 3 values that you need to configure :
+- `max_size` (Defaults to `10MB`): When a file size becomes higher than this value it will rotate it (its possible that the worker check the file after it actually pass the limit) . You can specify the unit at then end: `10G`, `10M`, `10K`
+- `retain` (Defaults to `all`): This number is the number of rotated logs that are keep at any one time, it means that if you have retain = 7 you will have at most 7 rotated logs and your current one.
+- `compress` (Defaults to `false`): Enable compression via gzip for all rotated logs
+- `dateFormat` (Defaults to `YYYY-MM-DD_HH-mm-ss`) : Format of the data used the name the file of log
+- `workerInterval` (Defaults to `30` in secs) : You can control at which interval the worker is checking the log's size (minimum is `1`)
+- `rotateInterval` (Defaults to `0 0 * * *` everyday at midnight): This cron is used to a force rotate when executed.
+We are using [node-schedule](https://github.com/node-schedule/node-schedule) to schedule cron, so all valid cron for [node-schedule](https://github.com/node-schedule/node-schedule) is valid cron for this option. Cron style :
+```
+*    *    *    *    *    *
+┬    ┬    ┬    ┬    ┬    ┬
+│    │    │    │    │    |
+│    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+│    │    │    │    └───── month (1 - 12)
+│    │    │    └────────── day of month (1 - 31)
+│    │    └─────────────── hour (0 - 23)
+│    └──────────────────── minute (0 - 59)
+└───────────────────────── second (0 - 59, OPTIONAL)
+```
+### How to set these values ?
 
-- max_size (Defaults to 10MB): When a file size becomes higher than this value it will split it. You can specify the unit at then end: `10G`, `10M`, `10K`
-- interval (Defaults to 1):
-- interval_unit (Defaults to 'DD'): interval and interval_unit works together, it means if you have interval_unit='DD' and interval=3, it will split the logs every 3 days.
-- retain (Defaults to all): This number is the number of rotated logs that are keep at any one time, it means that if you have retain = 7 you will have at most 7 rotated logs and your current one.
-
-Possible values for interval_unit are 'MM' (months), 'DD' (days), 'mm' (minutes).
-eg: interval:9, interval_unit:'mm' will split the logs every 9 minutes.
-
-How to set these values ?
-
-- After having installed the module you have to type :
+ After having installed the module you have to type :
 `pm2 set pm2-logrotate:<param> <value>`
 
-e.g: `pm2 set pm2-logrotate:max_size 1K` (1KB)
-`pm2 set pm2-logrotate:interval_unit 'MM'` (Months)
+e.g: 
+- `pm2 set pm2-logrotate:max_size 1K` (1KB)
+- `pm2 set pm2-logrotate:compress true` (compress logs when rotated)
+- `pm2 set pm2-logrotate:rotateInterval '*/1 * * * *'` (force rotate every minute)

@@ -1,12 +1,12 @@
-var fs      = require('fs');
-var path    = require('path');
-var pmx     = require('pmx');
-var pm2     = require('pm2');
-var moment  = require('moment');
-var Rolex   = require('rolex');
+var fs      	= require('fs');
+var path    	= require('path');
+var pmx     	= require('pmx');
+var pm2     	= require('pm2');
+var moment  	= require('moment-timezone');
+var scheduler	= require('node-schedule');
+var zlib      = require('zlib');
 
 var conf = pmx.initModule({
-
   widget : {
     type             : 'generic',
     logo             : 'http://web.townsendsecurity.com/Portals/15891/images/logging.png',
@@ -15,7 +15,6 @@ var conf = pmx.initModule({
       probes  : false,
       actions : false
     },
-
     block : {
       issues  : false,
       cpu: false,
@@ -25,22 +24,16 @@ var conf = pmx.initModule({
   }
 });
 
-
-var WORKER_INTERVAL = moment.duration(50, 'seconds').asMilliseconds();
-var SIZE_LIMIT = get_limit_size(); // 10MB
-var INTERVAL_UNIT = conf.interval_unit || 'DD'; // MM = months, DD = days, mm = minutes
-var INTERVAL = parseInt(conf.interval) || 1; // INTERVAL:1 day
-var RETAIN = isNaN(parseInt(conf.retain))? undefined: parseInt(conf.retain); // All
-
-var NOW = parseInt(moment().format(INTERVAL_UNIT));
-var DATE_FORMAT = 'YYYY-MM-DD-HH-mm';
-var durationLegend = {
-  MM: 'M',
-  DD: 'd',
-  mm: 'm'
-};
-
-var gl_file_list = [];
+var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 : 
+                            parseInt(conf.workerInterval) * 1000; // default: 30 secs
+var SIZE_LIMIT = get_limit_size(); // default : 10MB
+var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
+var RETAIN = isNaN(parseInt(conf.retain))? undefined : parseInt(conf.retain); // All
+var COMPRESSION = conf.compress || false; // Do not compress by default
+var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
+var WATCHED_FILES = [];
+var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION
+    , memLevel: zlib.Z_BEST_COMPRESSION });
 
 function get_limit_size() {
   if (conf.max_size == '')
@@ -79,11 +72,20 @@ function delete_old(file) {
 
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().subtract(1, durationLegend[INTERVAL_UNIT]).format(DATE_FORMAT) + '.log';
+    + moment().format(DATE_FORMAT) + '.log';
+  // if compression is enabled, add gz extention
+  if (COMPRESSION)
+    final_name += ".gz";
 
 	var readStream = fs.createReadStream(file);
 	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
-	readStream.pipe(writeStream);
+  
+  if (COMPRESSION) {
+    readStream.pipe(GZIP).pipe(writeStream);
+  } else {
+    readStream.pipe(writeStream);
+  }
+	
 	readStream.on('end', function() {
 		fs.truncateSync(file, 0);
 		console.log('"' + final_name + '" has been created');
@@ -97,65 +99,61 @@ function proceed(file) {
 function proceed_file(file, force) {
   if (!fs.existsSync(file))
     return;
-
-  gl_file_list.push(file);
-
+  
+  WATCHED_FILES.push(file);
   var size = fs.statSync(file).size;
 
   if (size > 0 && (size >= SIZE_LIMIT || force)) {
+      console.log("rotate with force " + force)
     proceed(file);
   }
 }
 
 function proceed_app(app, force) {
-  // Get error and out file
-  var out_file = app.pm2_env.pm_out_log_path;
-  var err_file = app.pm2_env.pm_err_log_path;
-
-  proceed_file(out_file, force);
-  proceed_file(err_file, force);
-}
-
-function is_it_time_yet() {
-  var max_value = INTERVAL_UNIT == 'MM' ? 12 : 60;
-
-  if (NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT))
-      || NOW + INTERVAL == parseInt(moment().format(INTERVAL_UNIT)) - max_value) {
-    NOW = parseInt(moment().format(INTERVAL_UNIT));
-    return true;
-  }
-  else {
-    return false;
-  }
+  // Check all log path
+  proceed_file(app.pm2_env.pm_out_log_path, force);
+  proceed_file(app.pm2_env.pm_err_log_path, force);
+  proceed_file(app.pm2_env.pm_log_path, force);
 }
 
 // Connect to local PM2
 pm2.connect(function(err) {
   if (err) return console.error(err.stack || err);
 
-  function worker() {
-    // Get process list managed by PM2
+  // start background task
+  setInterval(function() {
+    // get list of process managed by pm2
     pm2.list(function(err, apps) {
       if (err) return console.error(err.stack || err);
 
-      proceed_file(process.env.HOME + '/.pm2/pm2.log', false);
-      proceed_file(process.env.HOME + '/.pm2/agent.log', false);
+      // reset the watched files
+      WATCHED_FILES = [];
 
-      if (is_it_time_yet())
-        apps.forEach(function(app) {proceed_app(app, true)});
-      else
-        apps.forEach(function(app) {proceed_app(app, false)});
+      // rotate log that are bigger than the limit
+      apps.forEach(function(app) {
+         proceed_app(app, false);
+      });
     });
-  };
 
-  setTimeout(function() {
-    setInterval(function(){
-      gl_file_list = [];
-      worker();
-    }, WORKER_INTERVAL);
-  }, (WORKER_INTERVAL - (Date.now() % WORKER_INTERVAL)));
-});
+    // rotate pm2 log
+    proceed_file(process.env.HOME + '/.pm2/pm2.log', false);
+    proceed_file(process.env.HOME + '/.pm2/agent.log', false);
+  }, WORKER_INTERVAL);
+
+  // register the cron to force rotate file
+  scheduler.scheduleJob(ROTATE_CRON, function () {
+    // get list of process managed by pm2
+    pm2.list(function(err, apps) {
+        if (err) return console.error(err.stack || err);
+
+        // force rotate for each logs
+        apps.forEach(function(app) {
+          proceed_app(app, true);
+        });
+      });
+  });
+})
 
 pmx.action('list files', function(reply) {
-  return reply(gl_file_list);
+  return reply(WATCHED_FILES);
 });
