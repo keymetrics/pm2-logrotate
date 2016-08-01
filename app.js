@@ -39,7 +39,7 @@ function get_limit_size() {
   if (conf.max_size == '')
     return (1024 * 1024 * 10);
   if (typeof(conf.max_size) !== 'string')
-      conf.max_size = conf.max_size.toString();
+      conf.max_size = conf.max_size + "";
   if (conf.max_size.slice(-1) === 'G')
     return (parseInt(conf.max_size) * 1024 * 1024 * 1024);
   if (conf.max_size.slice(-1) === 'M')
@@ -104,7 +104,6 @@ function proceed_file(file, force) {
   var size = fs.statSync(file).size;
 
   if (size > 0 && (size >= SIZE_LIMIT || force)) {
-      console.log("rotate with force " + force)
     proceed(file);
   }
 }
