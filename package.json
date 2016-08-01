@@ -3,10 +3,6 @@
   "version": "2.0.0",
   "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
-  "devDependencies": {
-    "should"  : "*",
-    "mocha"   : "*"
-  },
   "dependencies": {
     "moment-timezone": "0.5.5",
     "node-schedule": "1.1.1",
