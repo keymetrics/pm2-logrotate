@@ -19,10 +19,21 @@ var conf = pmx.initModule({
       issues  : false,
       cpu: false,
       mem: false,
-      actions : true
+      actions : true,
+      main_probes : ['Global logs size', 'Files count']
     }
   }
 });
+
+var PM2_ROOT_PATH = '';
+var Probe = pmx.probe();
+
+if (process.env.PM2_HOME)
+  PM2_ROOT_PATH = process.env.PM2_HOME;
+else if (process.env.HOME && !process.env.HOMEPATH)
+  PM2_ROOT_PATH = path.resolve(process.env.HOME, '.pm2');
+else if (process.env.HOME || process.env.HOMEPATH)
+  PM2_ROOT_PATH = path.resolve(process.env.HOMEDRIVE, process.env.HOME || process.env.HOMEPATH, '.pm2');
 
 var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 : 
                             parseInt(conf.workerInterval) * 1000; // default: 30 secs
@@ -31,9 +42,8 @@ var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at 
 var RETAIN = isNaN(parseInt(conf.retain))? undefined : parseInt(conf.retain); // All
 var COMPRESSION = conf.compress || false; // Do not compress by default
 var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
+var ROTATE_MODULE = conf.rotateModule == undefined ? true : conf.rotateModule;
 var WATCHED_FILES = [];
-var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION
-    , memLevel: zlib.Z_BEST_COMPRESSION });
 
 function get_limit_size() {
   if (conf.max_size == '')
@@ -73,19 +83,32 @@ function delete_old(file) {
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
     + moment().format(DATE_FORMAT) + '.log';
-  // if compression is enabled, add gz extention
-  if (COMPRESSION)
+  // if compression is enabled, add gz extention and create a gzip instance
+  if (COMPRESSION) {
+    var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
     final_name += ".gz";
+  }
 
+  // create our read/write streams
 	var readStream = fs.createReadStream(file);
-	var writeStream = fs.createWriteStream(final_name, {'flags': 'a'});
-  
+	var writeStream = fs.createWriteStream(final_name, {'flags': 'w+'});
+
+  // pipe all stream
   if (COMPRESSION) {
     readStream.pipe(GZIP).pipe(writeStream);
   } else {
     readStream.pipe(writeStream);
   }
-	
+
+  // listen for error
+	readStream.on('error', function (error) {
+     console.error(err.stack || err);
+  })
+  writeStream.on('error', function (error) {
+     console.error(err.stack || err);
+  })
+
+ // when the read is done, empty the file and check for retain option
 	readStream.on('end', function() {
 		fs.truncateSync(file, 0);
 		console.log('"' + final_name + '" has been created');
@@ -97,15 +120,17 @@ function proceed(file) {
 }
 
 function proceed_file(file, force) {
-  if (!fs.existsSync(file))
-    return;
+  if (!fs.existsSync(file)) return;
   
   WATCHED_FILES.push(file);
-  var size = fs.statSync(file).size;
 
-  if (size > 0 && (size >= SIZE_LIMIT || force)) {
-    proceed(file);
-  }
+  fs.stat(file, function (err, data) {
+    if (err) return console.error(err.stack || err);
+
+    if (data.size > 0 && (data.size >= SIZE_LIMIT || force)) {
+      proceed(file);
+    }
+  });
 }
 
 function proceed_app(app, force) {
@@ -130,13 +155,16 @@ pm2.connect(function(err) {
 
       // rotate log that are bigger than the limit
       apps.forEach(function(app) {
-         proceed_app(app, false);
+          // if its a module and the rotate of module is disabled, ignore
+          if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
+          
+          proceed_app(app, true);
       });
     });
 
     // rotate pm2 log
-    proceed_file(process.env.HOME + '/.pm2/pm2.log', false);
-    proceed_file(process.env.HOME + '/.pm2/agent.log', false);
+    proceed_file(PM2_ROOT_PATH + '/pm2.log', false);
+    proceed_file(PM2_ROOT_PATH + '/agent.log', false);
   }, WORKER_INTERVAL);
 
   // register the cron to force rotate file
@@ -145,14 +173,97 @@ pm2.connect(function(err) {
     pm2.list(function(err, apps) {
         if (err) return console.error(err.stack || err);
 
-        // force rotate for each logs
+        // force rotate for each app
         apps.forEach(function(app) {
+          // if its a module and the rotate of module is disabled, ignore
+          if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
+
           proceed_app(app, true);
         });
       });
   });
 })
 
-pmx.action('list files', function(reply) {
+/**  ACTION PMX **/
+pmx.action('list watched files', function(reply) {
   return reply(WATCHED_FILES);
 });
+
+pmx.action('files size', function(reply) {
+  var returned = {};
+  var folder = PM2_ROOT_PATH + "/logs";
+
+  fs.readdir(folder, function (err, files) {
+      if (err) {
+        console.error(err.stack || err);
+        return reply(0)
+      }
+
+      files.forEach(function (file, idx, arr) {
+        returned[file] = (fs.statSync(folder + "/" + file).size);
+      });
+      return reply(returned);
+  });
+});
+
+/** PROB PMX **/
+var metrics = {};
+metrics.totalsize = Probe.metric({
+    name  : 'Global logs size',
+    value : 'N/A'
+});
+
+metrics.totalcount = Probe.metric({
+    name  : 'Files count',
+    value : 'N/A'
+});
+
+setInterval(function () {
+  var returned = 0;
+  var folder = PM2_ROOT_PATH + "/logs";
+  fs.readdir(folder, function (err, files) {
+    if (err) {
+         console.error(err.stack || err);
+         return metrics.totalsize.set("error");
+    }
+
+    files.forEach(function (file, idx, arr) {
+       returned += fs.statSync(folder + "/" + file).size;
+    });
+
+    metrics.totalsize.set(handleUnit(returned, 2));
+  });
+}, 30000);
+
+// update file count every 10secs
+setInterval(function () {
+  fs.readdir(PM2_ROOT_PATH + "/logs", function (err, files) {
+      if (err) {
+        console.error(err.stack || err);
+        return metrics.totalcount.set(0);
+      }
+
+      return  metrics.totalcount.set(files.length);
+  });
+}, 30000);
+
+function handleUnit(bytes, precision) {
+  var kilobyte = 1024;
+  var megabyte = kilobyte * 1024;
+  var gigabyte = megabyte * 1024;
+  var terabyte = gigabyte * 1024;
+
+  if ((bytes >= 0) && (bytes < kilobyte)) {
+    return bytes + ' B';
+  } else if ((bytes >= kilobyte) && (bytes < megabyte)) {
+    return (bytes / kilobyte).toFixed(precision) + ' KB';
+  } else if ((bytes >= megabyte) && (bytes < gigabyte)) {
+    return (bytes / megabyte).toFixed(precision) + ' MB';
+  } else if ((bytes >= gigabyte) && (bytes < terabyte)) {
+    return (bytes / gigabyte).toFixed(precision) + ' GB';
+  } else if (bytes >= terabyte) {
+    return (bytes / terabyte).toFixed(precision) + ' TB';
+  } else {
+    return bytes + ' B';
+  }
+};

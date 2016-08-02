@@ -34,6 +34,7 @@
     "compress": "false",
     "dateFormat": "YYYY-MM-DD_HH-mm-ss",
     "workerInterval": "30",
-    "rotateInterval": "0 0 * * *"
+    "rotateInterval": "0 0 * * *",
+    "ROTATE_MODULE": true
   }
 }
