@@ -150,9 +150,6 @@ pm2.connect(function(err) {
     pm2.list(function(err, apps) {
       if (err) return console.error(err.stack || err);
 
-      // reset the watched files
-      WATCHED_FILES = [];
-
       // rotate log that are bigger than the limit
       apps.forEach(function(app) {
           // if its a module and the rotate of module is disabled, ignore
@@ -185,21 +182,24 @@ pm2.connect(function(err) {
 })
 
 /**  ACTION PMX **/
-pmx.action('list watched files', function(reply) {
-  return reply(WATCHED_FILES);
+pmx.action('list watched logs', function(reply) {
+  var returned = {};
+  WATCHED_FILES.forEach(function (file) {
+        returned[file] = (fs.statSync(file).size);
+  });
+  return reply(returned);
 });
 
-pmx.action('files size', function(reply) {
+pmx.action('list all logs', function(reply) {
   var returned = {};
   var folder = PM2_ROOT_PATH + "/logs";
-
   fs.readdir(folder, function (err, files) {
       if (err) {
         console.error(err.stack || err);
         return reply(0)
       }
 
-      files.forEach(function (file, idx, arr) {
+      files.forEach(function (file) {
         returned[file] = (fs.statSync(folder + "/" + file).size);
       });
       return reply(returned);
@@ -218,13 +218,14 @@ metrics.totalcount = Probe.metric({
     value : 'N/A'
 });
 
-setInterval(function () {
+// update folder size of logs every 10secs
+function updateFolderSizeProbe() {
   var returned = 0;
   var folder = PM2_ROOT_PATH + "/logs";
   fs.readdir(folder, function (err, files) {
     if (err) {
          console.error(err.stack || err);
-         return metrics.totalsize.set("error");
+         return metrics.totalsize.set("N/A");
     }
 
     files.forEach(function (file, idx, arr) {
@@ -233,10 +234,12 @@ setInterval(function () {
 
     metrics.totalsize.set(handleUnit(returned, 2));
   });
-}, 30000);
+}
+updateFolderSizeProbe();
+setInterval(updateFolderSizeProbe, 30000);
 
 // update file count every 10secs
-setInterval(function () {
+function updateFileCountProbe() {
   fs.readdir(PM2_ROOT_PATH + "/logs", function (err, files) {
       if (err) {
         console.error(err.stack || err);
@@ -245,7 +248,9 @@ setInterval(function () {
 
       return  metrics.totalcount.set(files.length);
   });
-}, 30000);
+}
+updateFileCountProbe();
+setInterval(updateFileCountProbe, 30000);
 
 function handleUnit(bytes, precision) {
   var kilobyte = 1024;
