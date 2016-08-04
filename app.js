@@ -155,7 +155,7 @@ pm2.connect(function(err) {
           // if its a module and the rotate of module is disabled, ignore
           if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
           
-          proceed_app(app, true);
+          proceed_app(app, false);
       });
     });
 
