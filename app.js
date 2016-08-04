@@ -40,9 +40,9 @@ var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 :
 var SIZE_LIMIT = get_limit_size(); // default : 10MB
 var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
 var RETAIN = isNaN(parseInt(conf.retain))? undefined : parseInt(conf.retain); // All
-var COMPRESSION = conf.compress || false; // Do not compress by default
+var COMPRESSION = JSON.parse(conf.compress) || false; // Do not compress by default
 var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
-var ROTATE_MODULE = conf.rotateModule == undefined ? true : conf.rotateModule;
+var ROTATE_MODULE = JSON.parse(conf.rotateModule) || true;
 var WATCHED_FILES = [];
 
 function get_limit_size() {
