@@ -9,16 +9,16 @@ var zlib      = require('zlib');
 var conf = pmx.initModule({
   widget : {
     type             : 'generic',
-    logo             : 'http://web.townsendsecurity.com/Portals/15891/images/logging.png',
+    logo             : 'https://raw.githubusercontent.com/pm2-hive/pm2-logrotate/master/pres/logo.png',
     theme            : ['#111111', '#1B2228', '#31C2F1', '#807C7C'],
     el : {
       probes  : false,
       actions : false
     },
     block : {
-      issues  : false,
-      cpu: false,
-      mem: false,
+      issues  : true,
+      cpu: true,
+      mem: true,
       actions : true,
       main_probes : ['Global logs size', 'Files count']
     }
@@ -39,7 +39,8 @@ var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 :
                             parseInt(conf.workerInterval) * 1000; // default: 30 secs
 var SIZE_LIMIT = get_limit_size(); // default : 10MB
 var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
-var RETAIN = isNaN(parseInt(conf.retain))? undefined : parseInt(conf.retain); // All
+var RETAIN = isNaN(parseInt(conf.retain)) ? undefined : parseInt(conf.retain); // All
+console.log(RETAIN);
 var COMPRESSION = JSON.parse(conf.compress) || false; // Do not compress by default
 var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
 var ROTATE_MODULE = JSON.parse(conf.rotateModule) || true;
@@ -60,22 +61,27 @@ function get_limit_size() {
 }
 
 function delete_old(file) {
-  var fileBaseName = file.substr(0, file.length - 4) + '__';
-  var readPath = path.join(path.dirname(fileBaseName), "/");
+  var fileBaseName = file.substr(0, file.length - 4).split('/').pop() + "__";
 
-  fs.readdir(readPath, function(err, files) {
+  fs.readdir(PM2_ROOT_PATH + "/logs", function(err, files) {
+    if (err) return pmx.notify(err);
+
     var rotated_files = []
     for (var i = 0, len = files.length; i < len; i++) {
-      if (fileBaseName === ((readPath + files[i]).substr(0, fileBaseName.length))) {
-        rotated_files.push(readPath + files[i])
-      }
+      console.log(files[i] + "  :  " + fileBaseName)
+      console.log(files[i].indexOf(fileBaseName))
+      if (files[i].indexOf(fileBaseName) >= 0)
+        rotated_files.push(files[i]);
     }
     rotated_files.sort().reverse();
 
     for (var i = rotated_files.length - 1; i >= 0; i--) {
-      if (RETAIN > i) { break; }
-      fs.unlink(rotated_files[i]);
-      console.log('"' + rotated_files[i] + '" has been deleted');
+      if (RETAIN > i) return ;
+
+      fs.unlink(path.resolve(PM2_ROOT_PATH + "/logs", rotated_files[i]), function (err) {
+        if (err) return console.error(err);
+        console.log('"' + rotated_files[i] + '" has been deleted');
+      });
     };
   });
 }
@@ -94,28 +100,27 @@ function proceed(file) {
 	var writeStream = fs.createWriteStream(final_name, {'flags': 'w+'});
 
   // pipe all stream
-  if (COMPRESSION) {
+  if (COMPRESSION)
     readStream.pipe(GZIP).pipe(writeStream);
-  } else {
+  else 
     readStream.pipe(writeStream);
-  }
+  
 
   // listen for error
-	readStream.on('error', function (error) {
-     console.error(err.stack || err);
-  })
-  writeStream.on('error', function (error) {
-     console.error(err.stack || err);
-  })
+	readStream.on('error', pmx.notify);
+  writeStream.on('error', pmx.notify);
+  if (COMPRESSION)
+    GZIP.on('error', pmx.notify);
 
  // when the read is done, empty the file and check for retain option
 	readStream.on('end', function() {
-		fs.truncateSync(file, 0);
-		console.log('"' + final_name + '" has been created');
+		fs.truncate(file, function (err) {
+      if (err) return pmx.notify(err);
+      console.log('"' + final_name + '" has been created');
 
-		if (RETAIN !== undefined) {
-			delete_old(file);
-		}
+      if (typeof(RETAIN) === 'number') 
+        delete_old(file);
+    });
 	});
 }
 
@@ -125,11 +130,10 @@ function proceed_file(file, force) {
   WATCHED_FILES.push(file);
 
   fs.stat(file, function (err, data) {
-    if (err) return console.error(err.stack || err);
+    if (err) return console.error(err);
 
-    if (data.size > 0 && (data.size >= SIZE_LIMIT || force)) {
+    if (data.size > 0 && (data.size >= SIZE_LIMIT || force)) 
       proceed(file);
-    }
   });
 }
 

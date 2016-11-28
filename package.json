@@ -1,6 +1,6 @@
 {
   "name": "pm2-logrotate",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
   "dependencies": {
