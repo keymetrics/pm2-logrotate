@@ -68,8 +68,6 @@ function delete_old(file) {
 
     var rotated_files = []
     for (var i = 0, len = files.length; i < len; i++) {
-      console.log(files[i] + "  :  " + fileBaseName)
-      console.log(files[i].indexOf(fileBaseName))
       if (files[i].indexOf(fileBaseName) >= 0)
         rotated_files.push(files[i]);
     }
