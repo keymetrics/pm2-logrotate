@@ -62,8 +62,9 @@ function get_limit_size() {
 
 function delete_old(file) {
   var fileBaseName = file.substr(0, file.length - 4).split('/').pop() + "__";
+  var dirName = path.dirname(file);
 
-  fs.readdir(PM2_ROOT_PATH + "/logs", function(err, files) {
+  fs.readdir(dirName, function(err, files) {
     if (err) return pmx.notify(err);
 
     var rotated_files = []
@@ -76,7 +77,7 @@ function delete_old(file) {
     for (var i = rotated_files.length - 1; i >= 0; i--) {
       if (RETAIN > i) return ;
 
-      fs.unlink(path.resolve(PM2_ROOT_PATH + "/logs", rotated_files[i]), function (err) {
+      fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
         if (err) return console.error(err);
         console.log('"' + rotated_files[i] + '" has been deleted');
       });
