@@ -4,6 +4,7 @@
   "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
   "dependencies": {
+    "graceful-fs": "^4.1.11",
     "moment-timezone": "0.5.5",
     "node-schedule": "1.1.1",
     "pm2": "latest",
