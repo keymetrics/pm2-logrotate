@@ -28,6 +28,9 @@ We are using [node-schedule](https://github.com/node-schedule/node-schedule) to 
 │    └──────────────────── minute (0 - 59)
 └───────────────────────── second (0 - 59, OPTIONAL)
 ```
+- `rotateOut` (Defaults to `true`): To rotate standard output logs
+- `rotateErr` (Defaults to `true`): To rotate error output logs
+
 ### How to set these values ?
 
  After having installed the module you have to type :

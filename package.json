@@ -1,6 +1,6 @@
 {
   "name": "pm2-logrotate",
-  "version": "2.3.0",
+  "version": "2.2.1",
   "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
   "dependencies": {
@@ -11,7 +11,7 @@
     "pmx": "latest"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha tests"
   },
   "author": "Joni SHKURTI",
   "repository": {
@@ -39,6 +39,7 @@
     "rotateModule": true
   },
   "devDependencies": {
-    "async": "^2.5.0"
+    "async": "^2.5.0",
+    "mocha": "^3.4.2"
   }
 }
