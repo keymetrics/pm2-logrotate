@@ -1,278 +1,230 @@
-var fs      	= require('graceful-fs');
-var path    	= require('path');
-var pmx     	= require('pmx');
-var pm2     	= require('pm2');
-var moment  	= require('moment-timezone');
-var scheduler	= require('node-schedule');
-var zlib      = require('zlib');
+const pmx = require('pmx')
+const pm2 = require('pm2')
+const fs = require('graceful-fs')
+const path = require('path')
+const moment = require('moment-timezone')
+const bytes = require('./utils/bytes.js')
+const randomString = require('./utils/randomString.js')
+const schedule = require('node-schedule')
+const zlib = require('zlib')
 
-var conf = pmx.initModule({
-  widget : {
-    type             : 'generic',
-    logo             : 'https://raw.githubusercontent.com/pm2-hive/pm2-logrotate/master/pres/logo.png',
-    theme            : ['#111111', '#1B2228', '#31C2F1', '#807C7C'],
-    el : {
-      probes  : false,
-      actions : false
-    },
-    block : {
-      issues  : true,
-      cpu: true,
-      mem: true,
-      actions : true,
-      main_probes : ['Global logs size', 'Files count']
+const WATCHED_FILES = []
+
+if (require.main === module) {
+  pmx.initModule({
+    widget: {
+      type: 'generic',
+      logo: 'https://raw.githubusercontent.com/pm2-hive/pm2-logrotate/master/pres/logo.png',
+      theme: ['#111111', '#1B2228', '#31C2F1', '#807C7C'],
+      el: {
+        probes: false,
+        actions: false
+      },
+      block: {
+        issues: true,
+        cpu: true,
+        mem: true,
+        actions: true,
+        main_probes: ['Global logs size', 'Files count']
+      }
     }
-  }
-});
+  }, (err, conf) => {
+    if (err) return console.error(err)
 
-var PM2_ROOT_PATH = '';
-var Probe = pmx.probe();
-
-if (process.env.PM2_HOME)
-  PM2_ROOT_PATH = process.env.PM2_HOME;
-else if (process.env.HOME && !process.env.HOMEPATH)
-  PM2_ROOT_PATH = path.resolve(process.env.HOME, '.pm2');
-else if (process.env.HOME || process.env.HOMEPATH)
-  PM2_ROOT_PATH = path.resolve(process.env.HOMEDRIVE, process.env.HOME || process.env.HOMEPATH, '.pm2');
-
-var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 : 
-                            parseInt(conf.workerInterval) * 1000; // default: 30 secs
-var SIZE_LIMIT = get_limit_size(); // default : 10MB
-var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
-var RETAIN = isNaN(parseInt(conf.retain)) ? undefined : parseInt(conf.retain); // All
-console.log(RETAIN);
-var COMPRESSION = JSON.parse(conf.compress) || false; // Do not compress by default
-var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
-var ROTATE_MODULE = JSON.parse(conf.rotateModule) || true;
-var WATCHED_FILES = [];
-
-function get_limit_size() {
-  if (conf.max_size == '')
-    return (1024 * 1024 * 10);
-  if (typeof(conf.max_size) !== 'string')
-      conf.max_size = conf.max_size + "";
-  if (conf.max_size.slice(-1) === 'G')
-    return (parseInt(conf.max_size) * 1024 * 1024 * 1024);
-  if (conf.max_size.slice(-1) === 'M')
-    return (parseInt(conf.max_size) * 1024 * 1024);
-  if (conf.max_size.slice(-1) === 'K')
-    return (parseInt(conf.max_size) * 1024);
-  return parseInt(conf.max_size);
-}
-
-function delete_old(file) {
-  if (file == "/dev/null") return;
-  var fileBaseName = file.substr(0, file.length - 4).split('/').pop() + "__";
-  var dirName = path.dirname(file);
-
-  fs.readdir(dirName, function(err, files) {
-    if (err) return pmx.notify(err);
-
-    var rotated_files = []
-    for (var i = 0, len = files.length; i < len; i++) {
-      if (files[i].indexOf(fileBaseName) >= 0)
-        rotated_files.push(files[i]);
+    const config = {
+      workerInterval: (conf.workerInterval) ? conf.workerInterval * 1000 : 30000,
+      maxSize: (typeof (conf.max_size) !== 'string') ? conf.max_size.toString() : bytes(conf.max_size),
+      rotateCron: conf.rotateInterval || '0 0 * * *',
+      retain: isNaN(parseInt(conf.retain)) ? undefined : parseInt(conf.retain),
+      compress: conf.compress || false,
+      dateFormat: (conf.dateFormat === undefined) ? 'YYYY-MM-DD_HH-mm-ss' : conf.dateFormat,
+      rotateModule: (conf.rotateModule === undefined) ? false : conf.rotateModule,
+      rotateOut: (conf.rotateOut === undefined) ? true : conf.rotateOut,
+      rotateErr: (conf.rotateErr === undefined) ? true : conf.rotateErr
     }
-    rotated_files.sort().reverse();
+    if (process.env.PM2_HOME) {
+      config.pm2RootPath = process.env.PM2_HOME
+    } else if (process.env.HOME && !process.env.HOMEPATH) {
+      config.pm2RootPath = path.join(process.env.HOME, '.pm2')
+    } else if (process.env.HOME || process.env.HOMEPATH) {
+      config.pm2RootPath = path.join(process.env.HOMEDRIVE, process.env.HOME || process.env.HOMEPATH, '.pm2')
+    }
 
-    for (var i = rotated_files.length - 1; i >= 0; i--) {
-      if (RETAIN > i) return ;
+    const Probe = pmx.probe()
 
-      fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
-        if (err) return console.error(err);
-        console.log('"' + rotated_files[i] + '" has been deleted');
-      });
-    };
-  });
+    /** PROB PMX **/
+    const metrics = {}
+    metrics.totalsize = Probe.metric({
+      name: 'Global logs size',
+      value: 'N/A'
+    })
+    metrics.totalcount = Probe.metric({
+      name: 'Files count',
+      value: 'N/A'
+    })
+
+    // Update metrics every 30 secondes
+    setInterval(() => {
+      // Get files in logs folder
+      fs.readdir(`${config.pm2RootPath}/logs`, (err, files) => {
+        if (err) return pmx.notify.bind(err)
+
+        let size = 0
+        // Number of files
+        metrics.totalcount.set(files.length)
+        // Size of files
+        files.forEach(file => {
+          size += fs.statSync(`${config.pm2RootPath}/logs/${file}`).size
+        })
+        metrics.totalsize.set(bytes(size))
+      })
+    }, 30000)
+
+    // Connect to local PM2
+    pm2.connect(err => {
+      if (err) return console.error(err.stack || err)
+
+      if (config.workerInterval !== -1) {
+        // start background task
+        setInterval(() => {
+          // get list of process managed by pm2 and proceed
+          worker.getApps(config)
+        }, config.workerInterval)
+      }
+      // cron job
+      schedule.scheduleJob(config.rotateCron, () => {
+        // get list of process managed by pm2 and proceed
+        worker.getApps(config)
+      })
+    })
+
+    /**  ACTION PMX **/
+    pmx.action('list watched logs', reply => {
+      const returned = {}
+      WATCHED_FILES.forEach(file => {
+        returned[file] = fs.statSync(file).size
+      })
+      return reply(returned)
+    })
+    pmx.action('list all logs', reply => {
+      const returned = {}
+      const folder = `${config.pm2RootPath}/logs`
+      fs.readdir(folder, (err, files) => {
+        if (err) {
+          console.error(err.stack || err)
+          return reply(0)
+        }
+
+        files.forEach(file => {
+          returned[file] = fs.statSync(`${folder}/${file}`).size
+        })
+        return reply(returned)
+      })
+    })
+  })
 }
 
-function proceed(file) {
-  var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().format(DATE_FORMAT) + '.log';
-  // if compression is enabled, add gz extention and create a gzip instance
-  if (COMPRESSION) {
-    var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
-    final_name += ".gz";
-  }
+const worker = {
+  getApps (config) {
+    // Get list of apps
+    pm2.list((err, apps) => {
+      if (err) return console.error(err.stack || err)
 
-  // create our read/write streams
-	var readStream = fs.createReadStream(file);
-	var writeStream = fs.createWriteStream(final_name, {'flags': 'w+'});
+      // Proceed every apps
+      apps.forEach(app => {
+        if (app.pm2_env.axm_options.isModule && !config.rotateModule) return
 
-  // pipe all stream
-  if (COMPRESSION)
-    readStream.pipe(GZIP).pipe(writeStream);
-  else 
-    readStream.pipe(writeStream);
-  
+        if (config.rotateOut) {
+          this.proceed(config, app.pm2_env.pm_out_log_path, false)
+        }
+        if (config.rotateErr) {
+          this.proceed(config, app.pm2_env.pm_err_log_path, false)
+        }
+        this.proceed(config, app.pm2_env.pm_log_path, false)
+      })
+    })
+    this.proceed(config, config.pm2RootPath + '/pm2.log', false)
+    this.proceed(config, config.pm2RootPath + '/agent.log', false)
+  },
+  proceed (config, file, force, cb) {
+    if (!file || file === '/dev/null' || file === 'NULL') {
+      return typeof cb === 'function' ? cb(new Error('Wrong file')) : false
+    }
 
-  // listen for error
-	readStream.on('error', pmx.notify);
-  writeStream.on('error', pmx.notify);
-  if (COMPRESSION)
-    GZIP.on('error', pmx.notify);
+    var errHandler = (err) => {
+      pmx.notify(err)
+      return typeof cb === 'function' ? cb(err) : console.error(err)
+    }
 
- // when the read is done, empty the file and check for retain option
-	readStream.on('end', function() {
-		fs.truncate(file, function (err) {
-      if (err) return pmx.notify(err);
-      console.log('"' + final_name + '" has been created');
+    // Get file size
+    fs.stat(file, (err, data) => {
+      if (err) return errHandler(err)
 
-      if (typeof(RETAIN) === 'number') 
-        delete_old(file);
-    });
-	});
-}
-
-function proceed_file(file, force) {
-  if (!fs.existsSync(file)) return;
-  
-  WATCHED_FILES.push(file);
-
-  fs.stat(file, function (err, data) {
-    if (err) return console.error(err);
-
-    if (data.size > 0 && (data.size >= SIZE_LIMIT || force)) 
-      proceed(file);
-  });
-}
-
-function proceed_app(app, force) {
-  // Check all log path
-  proceed_file(app.pm2_env.pm_out_log_path, force);
-  proceed_file(app.pm2_env.pm_err_log_path, force);
-  proceed_file(app.pm2_env.pm_log_path, force);
-}
-
-// Connect to local PM2
-pm2.connect(function(err) {
-  if (err) return console.error(err.stack || err);
-
-  // start background task
-  setInterval(function() {
-    // get list of process managed by pm2
-    pm2.list(function(err, apps) {
-      if (err) return console.error(err.stack || err);
-
-      // rotate log that are bigger than the limit
-      apps.forEach(function(app) {
-          // if its a module and the rotate of module is disabled, ignore
-          if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
-          
-          proceed_app(app, false);
-      });
-    });
-
-    // rotate pm2 log
-    proceed_file(PM2_ROOT_PATH + '/pm2.log', false);
-    proceed_file(PM2_ROOT_PATH + '/agent.log', false);
-  }, WORKER_INTERVAL);
-
-  // register the cron to force rotate file
-  scheduler.scheduleJob(ROTATE_CRON, function () {
-    // get list of process managed by pm2
-    pm2.list(function(err, apps) {
-        if (err) return console.error(err.stack || err);
-
-        // force rotate for each app
-        apps.forEach(function(app) {
-          // if its a module and the rotate of module is disabled, ignore
-          if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
-
-          proceed_app(app, true);
-        });
-      });
-  });
-})
-
-/**  ACTION PMX **/
-pmx.action('list watched logs', function(reply) {
-  var returned = {};
-  WATCHED_FILES.forEach(function (file) {
-        returned[file] = (fs.statSync(file).size);
-  });
-  return reply(returned);
-});
-
-pmx.action('list all logs', function(reply) {
-  var returned = {};
-  var folder = PM2_ROOT_PATH + "/logs";
-  fs.readdir(folder, function (err, files) {
-      if (err) {
-        console.error(err.stack || err);
-        return reply(0)
+      if (WATCHED_FILES && WATCHED_FILES.indexOf(file) === -1) {
+        WATCHED_FILES.push(file)
       }
 
-      files.forEach(function (file) {
-        returned[file] = (fs.statSync(folder + "/" + file).size);
-      });
-      return reply(returned);
-  });
-});
-
-/** PROB PMX **/
-var metrics = {};
-metrics.totalsize = Probe.metric({
-    name  : 'Global logs size',
-    value : 'N/A'
-});
-
-metrics.totalcount = Probe.metric({
-    name  : 'Files count',
-    value : 'N/A'
-});
-
-// update folder size of logs every 10secs
-function updateFolderSizeProbe() {
-  var returned = 0;
-  var folder = PM2_ROOT_PATH + "/logs";
-  fs.readdir(folder, function (err, files) {
-    if (err) {
-         console.error(err.stack || err);
-         return metrics.totalsize.set("N/A");
-    }
-
-    files.forEach(function (file, idx, arr) {
-       returned += fs.statSync(folder + "/" + file).size;
-    });
-
-    metrics.totalsize.set(handleUnit(returned, 2));
-  });
-}
-updateFolderSizeProbe();
-setInterval(updateFolderSizeProbe, 30000);
-
-// update file count every 10secs
-function updateFileCountProbe() {
-  fs.readdir(PM2_ROOT_PATH + "/logs", function (err, files) {
-      if (err) {
-        console.error(err.stack || err);
-        return metrics.totalcount.set(0);
+      if ((data.size <= 0 || data.size < config.maxSize) && !force) {
+        return typeof cb === 'function' ? cb(null, false) : false
       }
 
-      return  metrics.totalcount.set(files.length);
-  });
-}
-updateFileCountProbe();
-setInterval(updateFileCountProbe, 30000);
+      // Name of file create by pm2-logrotate
+      let name = `${file.substr(0, file.length - 4)}__${randomString(5)}__${moment().format(config.dateFormat)}.log`
+      const dirName = path.dirname(file)
 
-function handleUnit(bytes, precision) {
-  var kilobyte = 1024;
-  var megabyte = kilobyte * 1024;
-  var gigabyte = megabyte * 1024;
-  var terabyte = gigabyte * 1024;
+      let gzip
+      if (config.compress) {
+        gzip = zlib.createGzip()
+        name += '.gz'
+        gzip.on('error', errHandler)
+      }
 
-  if ((bytes >= 0) && (bytes < kilobyte)) {
-    return bytes + ' B';
-  } else if ((bytes >= kilobyte) && (bytes < megabyte)) {
-    return (bytes / kilobyte).toFixed(precision) + ' KB';
-  } else if ((bytes >= megabyte) && (bytes < gigabyte)) {
-    return (bytes / megabyte).toFixed(precision) + ' MB';
-  } else if ((bytes >= gigabyte) && (bytes < terabyte)) {
-    return (bytes / gigabyte).toFixed(precision) + ' GB';
-  } else if (bytes >= terabyte) {
-    return (bytes / terabyte).toFixed(precision) + ' TB';
-  } else {
-    return bytes + ' B';
+      // Streams
+      const readStream = fs.createReadStream(file)
+      readStream.on('error', errHandler)
+      const writeStream = fs.createWriteStream(name, {'flags': 'w+'})
+      writeStream.on('error', errHandler)
+
+      // Copy
+      if (config.compress) {
+        readStream.pipe(gzip).pipe(writeStream)
+      } else {
+        readStream.pipe(writeStream)
+      }
+
+      // End of copy
+      readStream.on('end', () => {
+        // Remove content of old logs
+        fs.truncate(file, 0, err => {
+          if (err) return errHandler(err)
+
+          // Keep all file if retain = all
+          if (!config.retain) {
+            return typeof cb === 'function' ? cb(null, file) : false
+          }
+
+          // Get files in folder
+          fs.readdir(dirName, (err, files) => {
+            if (err) return errHandler(err)
+
+            // Base name of create by pm2-logrotate
+            const baseName = `${file.substr(0, file.length - 4).split('/').pop()}__`
+            // Rotate files and sort reverse
+            const rotated = files.filter(file => file.indexOf(baseName) !== -1).sort().reverse()
+            // Delete files
+            rotated.filter((file, i) => config.retain <= i).forEach(file => {
+              fs.unlink(path.join(dirName, file), err => {
+                if (err) return errHandler(err)
+
+                console.log(`${file} has been removed`)
+              })
+            })
+            return typeof cb === 'function' ? cb(null, file) : false
+          })
+        })
+      })
+    })
   }
-};
+}
+
+module.exports = worker

@@ -1,12 +1,12 @@
 {
   "name": "pm2-logrotate",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
   "dependencies": {
     "graceful-fs": "^4.1.11",
-    "moment-timezone": "0.5.5",
-    "node-schedule": "1.1.1",
+    "moment-timezone": "^0.5.13",
+    "node-schedule": "^1.2.3",
     "pm2": "latest",
     "pmx": "latest"
   },
@@ -37,5 +37,8 @@
     "workerInterval": "30",
     "rotateInterval": "0 0 * * *",
     "rotateModule": true
+  },
+  "devDependencies": {
+    "async": "^2.5.0"
   }
 }
