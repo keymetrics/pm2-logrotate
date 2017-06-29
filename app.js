@@ -66,7 +66,7 @@ if (require.main === module) {
     // Update metrics every 30 secondes
     setInterval(function () {
       // Get files in logs folder
-      fs.readdir(`${config.pm2RootPath}/logs`, function (err, files) {
+      fs.readdir(config.pm2RootPath + '/logs', function (err, files) {
         if (err) return pmx.notify.bind(err)
 
         var size = 0
@@ -74,7 +74,7 @@ if (require.main === module) {
         metrics.totalcount.set(files.length)
         // Size of files
         files.forEach(function (file) {
-          size += fs.statSync(`${config.pm2RootPath}/logs/${file}`).size
+          size += fs.statSync(config.pm2RootPath + '/logs/' + file).size
         })
         metrics.totalsize.set(bytes(size))
       })
@@ -108,7 +108,7 @@ if (require.main === module) {
     })
     pmx.action('list all logs', function (reply) {
       var returned = {}
-      var folder = `${config.pm2RootPath}/logs`
+      var folder = config.pm2RootPath + '/logs'
       fs.readdir(folder, function (err, files) {
         if (err) {
           console.error(err.stack || err)
@@ -116,7 +116,7 @@ if (require.main === module) {
         }
 
         files.forEach(function (file) {
-          returned[file] = fs.statSync(`${folder}/${file}`).size
+          returned[file] = fs.statSync(folder + '/' + file).size
         })
         return reply(returned)
       })
@@ -169,7 +169,7 @@ var worker = {
       }
 
       // Name of file create by pm2-logrotate
-      var name = `${file.substr(0, file.length - 4)}__${randomString(5)}__${moment().format(config.dateFormat)}.log`
+      var name = file.substr(0, file.length - 4) + '__' + randomString(5) + '__' + moment().format(config.dateFormat) + '.log'
       var dirName = path.dirname(file)
 
       var gzip
@@ -208,7 +208,7 @@ var worker = {
             if (err) return errHandler(err)
 
             // Base name of create by pm2-logrotate
-            var baseName = `${file.substr(0, file.length - 4).split('/').pop()}__`
+            var baseName = file.substr(0, file.length - 4).split('/').pop() + '__'
             // Rotate files and sort reverse
             var rotated = files.filter(function (file) {
               return file.indexOf(baseName) !== -1
@@ -220,7 +220,7 @@ var worker = {
               fs.unlink(path.join(dirName, file), function (err) {
                 if (err) return errHandler(err)
 
-                console.log(`${file} has been removed`)
+                console.log(file + ' has been removed')
               })
             })
             return typeof cb === 'function' ? cb(null, file) : false

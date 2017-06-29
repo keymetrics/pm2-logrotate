@@ -12,11 +12,11 @@ describe('Proceed function', function () {
   var matchFileCompress = /test-log-out-0__[a-zA-Z0-9]{5}__[0-9\-_]*.log.gz/
 
   after(function () {
-    fs.unlinkSync(`/tmp/test-log-out-0.log`)
+    fs.unlinkSync('/tmp/test-log-out-0.log')
   })
 
   it('Proceed with wrong file', function (done) {
-    var file = `/dev/null`
+    var file = '/dev/null'
     var config = {
       maxSize: '100B',
       retain: undefined,
@@ -35,7 +35,7 @@ describe('Proceed function', function () {
   })
 
   it('Proceed with default conf', function (done) {
-    var file = `/tmp/test-log-out-0.log`
+    var file = '/tmp/test-log-out-0.log'
     var config = {
       maxSize: '100B',
       retain: undefined,
@@ -54,7 +54,7 @@ describe('Proceed function', function () {
       })
       if (fs.statSync(file).size === 0 && test[0]) {
         test.forEach(function (file) {
-          fs.unlinkSync(`/tmp/${file}`)
+          fs.unlinkSync('/tmp/' + file)
         })
         return done()
       }
@@ -63,7 +63,7 @@ describe('Proceed function', function () {
   })
 
   it('Proceed with compress = true', function (done) {
-    var file = `/tmp/test-log-out-0.log`
+    var file = '/tmp/test-log-out-0.log'
     var config = {
       maxSize: '100B',
       retain: undefined,
@@ -82,7 +82,7 @@ describe('Proceed function', function () {
       })
       if (fs.statSync(file).size === 0 && test[0]) {
         test.forEach(function (file) {
-          fs.unlinkSync(`/tmp/${file}`)
+          fs.unlinkSync('/tmp/' + file)
         })
         return done()
       }
@@ -91,7 +91,7 @@ describe('Proceed function', function () {
   })
 
   it('Proceed with retain = 5', function (done) {
-    var file = `/tmp/test-log-out-0.log`
+    var file = '/tmp/test-log-out-0.log'
     var config = {
       maxSize: '100B',
       retain: 5,
@@ -115,7 +115,7 @@ describe('Proceed function', function () {
         return matchFile.test(file)
       })
       test.forEach(function (file) {
-        fs.unlinkSync(`/tmp/${file}`)
+        fs.unlinkSync('/tmp/' + file)
       })
       if (test.length !== 5) return done('Wrong number of files')
       return done()
