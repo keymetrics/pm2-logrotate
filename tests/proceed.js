@@ -1,4 +1,5 @@
 /* eslint-env mocha */
+/* eslint-disable node/no-deprecated-api */
 
 var fs = require('fs')
 var path = require('path')
@@ -46,7 +47,7 @@ describe('Proceed function', function () {
       rotateModule: true
     }
 
-    fs.writeFileSync(file, Buffer.alloc(bytes(config.maxSize)))
+    fs.writeFileSync(file, new Buffer(bytes(config.maxSize)))
     log.proceed(config, file, false, function () {
       var files = fs.readdirSync('/tmp')
       var test = files.filter(function (file) {
@@ -74,7 +75,7 @@ describe('Proceed function', function () {
       rotateModule: true
     }
 
-    fs.writeFileSync(file, Buffer.alloc(bytes(config.maxSize)))
+    fs.writeFileSync(file, new Buffer(bytes(config.maxSize)))
     log.proceed(config, file, false, function () {
       var files = fs.readdirSync('/tmp')
       var test = files.filter(function (file) {
@@ -103,7 +104,7 @@ describe('Proceed function', function () {
     }
 
     async.times(10, function (n, next) {
-      fs.writeFileSync(file, Buffer.alloc(100))
+      fs.writeFileSync(file, new Buffer(100))
       log.proceed(config, file, false, function (err, file) {
         next(err, file)
       })
