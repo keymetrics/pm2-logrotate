@@ -5,38 +5,38 @@
  * MIT Licensed
  */
 
-'use strict';
+'use strict'
 
 /**
  * Module exports.
  * @public
  */
 
-module.exports = bytes;
-module.exports.format = format;
-module.exports.parse = parse;
+module.exports = bytes
+module.exports.format = format
+module.exports.parse = parse
 
 /**
  * Module variables.
  * @private
  */
 
-var formatThousandsRegExp = /\B(?=(\d{3})+(?!\d))/g;
+var formatThousandsRegExp = /\B(?=(\d{3})+(?!\d))/g
 
-var formatDecimalsRegExp = /(?:\.0*|(\.[^0]+)0+)$/;
+var formatDecimalsRegExp = /(?:\.0*|(\.[^0]+)0+)$/
 
 var map = {
-  b:  1,
+  b: 1,
   kb: 1 << 10,
   mb: 1 << 20,
   gb: 1 << 30,
   tb: ((1 << 30) * 1024)
-};
+}
 
 // TODO: use is-finite module?
-var numberIsFinite = Number.isFinite || function (v) { return typeof v === 'number' && isFinite(v); };
+var numberIsFinite = Number.isFinite || function (v) { return typeof v === 'number' && isFinite(v) }
 
-var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb)$/i;
+var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb)$/i
 
 /**
  * Convert the given value in bytes into a string or parse to string to an integer in bytes.
@@ -53,16 +53,16 @@ var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb)$/i;
  * @returns {string|number|null}
  */
 
-function bytes(value, options) {
+function bytes (value, options) {
   if (typeof value === 'string') {
-    return parse(value);
+    return parse(value)
   }
 
   if (typeof value === 'number') {
-    return format(value, options);
+    return format(value, options)
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -83,44 +83,44 @@ function bytes(value, options) {
  * @public
  */
 
-function format(value, options) {
+function format (value, options) {
   if (!numberIsFinite(value)) {
-    return null;
+    return null
   }
 
-  var mag = Math.abs(value);
-  var thousandsSeparator = (options && options.thousandsSeparator) || '';
-  var unitSeparator = (options && options.unitSeparator) || '';
-  var decimalPlaces = (options && options.decimalPlaces !== undefined) ? options.decimalPlaces : 2;
-  var fixedDecimals = Boolean(options && options.fixedDecimals);
-  var unit = (options && options.unit) || '';
+  var mag = Math.abs(value)
+  var thousandsSeparator = (options && options.thousandsSeparator) || ''
+  var unitSeparator = (options && options.unitSeparator) || ''
+  var decimalPlaces = (options && options.decimalPlaces !== undefined) ? options.decimalPlaces : 2
+  var fixedDecimals = Boolean(options && options.fixedDecimals)
+  var unit = (options && options.unit) || ''
 
   if (!unit || !map[unit.toLowerCase()]) {
     if (mag >= map.tb) {
-      unit = 'TB';
+      unit = 'TB'
     } else if (mag >= map.gb) {
-      unit = 'GB';
+      unit = 'GB'
     } else if (mag >= map.mb) {
-      unit = 'MB';
+      unit = 'MB'
     } else if (mag >= map.kb) {
-      unit = 'kB';
+      unit = 'kB'
     } else {
-      unit = 'B';
+      unit = 'B'
     }
   }
 
-  var val = value / map[unit.toLowerCase()];
-  var str = val.toFixed(decimalPlaces);
+  var val = value / map[unit.toLowerCase()]
+  var str = val.toFixed(decimalPlaces)
 
   if (!fixedDecimals) {
-    str = str.replace(formatDecimalsRegExp, '$1');
+    str = str.replace(formatDecimalsRegExp, '$1')
   }
 
   if (thousandsSeparator) {
-    str = str.replace(formatThousandsRegExp, thousandsSeparator);
+    str = str.replace(formatThousandsRegExp, thousandsSeparator)
   }
 
-  return str + unitSeparator + unit;
+  return str + unitSeparator + unit
 }
 
 /**
@@ -134,29 +134,29 @@ function format(value, options) {
  * @public
  */
 
-function parse(val) {
+function parse (val) {
   if (typeof val === 'number' && !isNaN(val)) {
-    return val;
+    return val
   }
 
   if (typeof val !== 'string') {
-    return null;
+    return null
   }
 
   // Test if the string passed is valid
-  var results = parseRegExp.exec(val);
-  var floatValue;
-  var unit = 'b';
+  var results = parseRegExp.exec(val)
+  var floatValue
+  var unit = 'b'
 
   if (!results) {
     // Nothing could be extracted from the given string
-    floatValue = parseInt(val, 10);
+    floatValue = parseInt(val, 10)
     unit = 'b'
   } else {
     // Retrieve the value and the unit
-    floatValue = parseFloat(results[1]);
-    unit = results[4].toLowerCase();
+    floatValue = parseFloat(results[1])
+    unit = results[4].toLowerCase()
   }
 
-  return Math.floor(map[unit] * floatValue);
+  return Math.floor(map[unit] * floatValue)
 }

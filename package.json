@@ -11,7 +11,7 @@
     "pmx": "latest"
   },
   "scripts": {
-    "test": "mocha tests"
+    "test": "./node_modules/.bin/mocha tests"
   },
   "author": "Joni SHKURTI",
   "repository": {
@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "async": "^2.5.0",
-    "mocha": "^3.4.2"
+    "mocha": "^3.4.2",
+    "standard": "^10.0.2"
   }
 }

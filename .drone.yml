@@ -1,0 +1,28 @@
+pipeline:
+  build:
+    image: node:${NODE_VERSION}
+    commands:
+      - npm install 2> /dev/null
+      - export NODE_ENV=test
+      - npm run test
+      - ./node_modules/.bin/standard
+  slack:
+    image: plugins/slack
+    channel: ci
+    when:
+      status: [ success, failure ]
+    template: |
+      {{#success build.status}}
+        {{ repo.name }} : commit {{ build.commit }} on branch "{{ build.branch}}" with node:${NODE_VERSION} done by {{ build.author}} succeeded.
+      {{else}}
+        {{ repo.name }} : commit {{ build.commit }} on branch "{{ build.branch}}" with node:${NODE_VERSION} done by {{ build.author}} failed.
+      {{/success}}
+      see {{ build.link }}
+    secrets: [ slack_webhook ]
+matrix:
+  NODE_VERSION:
+    - 0.12
+    - 4
+    - 6
+    - 7
+    - 8
