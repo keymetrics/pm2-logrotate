@@ -28,15 +28,19 @@ var formatDecimalsRegExp = /(?:\.0*|(\.[^0]+)0+)$/
 var map = {
   b: 1,
   kb: 1 << 10,
+  k: 1 << 10,
   mb: 1 << 20,
+  m: 1 << 20,
   gb: 1 << 30,
-  tb: ((1 << 30) * 1024)
+  g: 1 << 30,
+  tb: ((1 << 30) * 1024),
+  t: ((1 << 30) & 1024)
 }
 
 // TODO: use is-finite module?
 var numberIsFinite = Number.isFinite || function (v) { return typeof v === 'number' && isFinite(v) }
 
-var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb)$/i
+var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(k|kb|m|mb|g|gb|t|tb)$/i
 
 /**
  * Convert the given value in bytes into a string or parse to string to an integer in bytes.
