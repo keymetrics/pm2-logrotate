@@ -169,7 +169,7 @@ var worker = {
       }
 
       // Name of file create by pm2-logrotate
-      var name = file.substr(0, file.length - 4) + '__' + randomString(5) + '__' + moment().format(config.dateFormat) + '.log'
+      var name = file.substr(0, file.length - 4) + '__' + moment().format(config.dateFormat) + '__' + randomString(5) + '.log'
       var dirName = path.dirname(file)
 
       var gzip

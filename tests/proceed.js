@@ -9,8 +9,8 @@ require.main.filename = path.resolve(__filename, '..')
 var log = require('../app')
 
 describe('Proceed function', function () {
-  var matchFile = /test-log-out-0__[a-zA-Z0-9]{5}__[0-9\-_]*.log/
-  var matchFileCompress = /test-log-out-0__[a-zA-Z0-9]{5}__[0-9\-_]*.log.gz/
+  var matchFile = /test-log-out-0__[0-9\-_]*__[a-zA-Z0-9]{5}.log/
+  var matchFileCompress = /test-log-out-0__[0-9\-_]*__[a-zA-Z0-9]{5}.log.gz/
 
   after(function () {
     fs.unlinkSync('/tmp/test-log-out-0.log')
