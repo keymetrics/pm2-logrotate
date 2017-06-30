@@ -214,15 +214,17 @@ var worker = {
               return file.indexOf(baseName) !== -1
             }).sort().reverse()
             // Delete files
-            rotated.filter(function (file, i) {
+            rotated = rotated.filter(function (file, i) {
               return config.retain <= i
-            }).forEach(function (file) {
-              fs.unlink(path.join(dirName, file), function (err) {
-                if (err) return errHandler(err)
-
-                console.log(file + ' has been removed')
-              })
             })
+            for (var i = 0; i < rotated.length; i++) {
+              try {
+                fs.unlinkSync(path.join(dirName, rotated[i]))
+                console.log(rotated[i] + ' has been removed')
+              } catch (e) {
+                return errHandler(e)
+              }
+            }
             return typeof cb === 'function' ? cb(null, file) : false
           })
         })

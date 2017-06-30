@@ -103,7 +103,7 @@ describe('Proceed function', function () {
       rotateModule: true
     }
 
-    async.times(10, function (n, next) {
+    async.timesSeries(10, function (n, next) {
       fs.writeFileSync(file, new Buffer(100))
       log.proceed(config, file, false, function (err, file) {
         next(err, file)
