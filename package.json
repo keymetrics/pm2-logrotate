@@ -1,6 +1,6 @@
 {
   "name": "pm2-logrotate",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Module to rotate logs of every pm2 application",
   "main": "app.js",
   "dependencies": {
@@ -26,7 +26,8 @@
   "apps": [
     {
       "name": "pm2-logrotate",
-      "script": "app.js"
+      "script": "app.js",
+      "max_memory_restart" : "500M"
     }
   ],
   "config": {
