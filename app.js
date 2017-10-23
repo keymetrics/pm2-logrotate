@@ -107,14 +107,17 @@ function proceed(file) {
   
 
   // listen for error
-  readStream.on('error', pmx.notify);
-  writeStream.on('error', pmx.notify);
-  if (COMPRESSION)
-    GZIP.on('error', pmx.notify);
+  readStream.on('error', pmx.notify.bind(this))
+  writeStream.on('error', pmx.notify.bind(this))
+  if (COMPRESSION) {
+    GZIP.on('error', pmx.notify.bind(this))
+  }
 
  // when the read is done, empty the file and check for retain option
   readStream.on('end', function() {
-    GZIP.close();
+    if (GZIP) {
+      GZIP.close()
+    }
     readStream.close();
     writeStream.close();
     fs.truncate(file, function (err) {
