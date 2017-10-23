@@ -107,21 +107,24 @@ function proceed(file) {
   
 
   // listen for error
-	readStream.on('error', pmx.notify);
+  readStream.on('error', pmx.notify);
   writeStream.on('error', pmx.notify);
   if (COMPRESSION)
     GZIP.on('error', pmx.notify);
 
  // when the read is done, empty the file and check for retain option
-	readStream.on('end', function() {
-		fs.truncate(file, function (err) {
+  readStream.on('end', function() {
+    GZIP.close();
+    readStream.close();
+    writeStream.close();
+    fs.truncate(file, function (err) {
       if (err) return pmx.notify(err);
       console.log('"' + final_name + '" has been created');
 
       if (typeof(RETAIN) === 'number') 
         delete_old(file);
     });
-	});
+  });
 }
 
 function proceed_file(file, force) {
