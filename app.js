@@ -4,7 +4,7 @@ var pmx     	= require('pmx');
 var pm2     	= require('pm2');
 var moment  	= require('moment-timezone');
 var scheduler	= require('node-schedule');
-var zlib      = require('zlib');
+var zlib        = require('zlib');
 
 var conf = pmx.initModule({
   widget : {
@@ -40,14 +40,13 @@ var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 :
 var SIZE_LIMIT = get_limit_size(); // default : 10MB
 var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
 var RETAIN = isNaN(parseInt(conf.retain)) ? undefined : parseInt(conf.retain); // All
-console.log(RETAIN);
 var COMPRESSION = JSON.parse(conf.compress) || false; // Do not compress by default
 var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
 var ROTATE_MODULE = JSON.parse(conf.rotateModule) || true;
 var WATCHED_FILES = [];
 
 function get_limit_size() {
-  if (conf.max_size == '')
+  if (conf.max_size === '')
     return (1024 * 1024 * 10);
   if (typeof(conf.max_size) !== 'string')
       conf.max_size = conf.max_size + "";
@@ -61,28 +60,29 @@ function get_limit_size() {
 }
 
 function delete_old(file) {
-  if (file == "/dev/null") return;
+  if (file === "/dev/null") return;
   var fileBaseName = file.substr(0, file.length - 4).split('/').pop() + "__";
   var dirName = path.dirname(file);
 
   fs.readdir(dirName, function(err, files) {
+    var i, len;
     if (err) return pmx.notify(err);
 
-    var rotated_files = []
-    for (var i = 0, len = files.length; i < len; i++) {
+    var rotated_files = [];
+    for (i = 0, len = files.length; i < len; i++) {
       if (files[i].indexOf(fileBaseName) >= 0)
         rotated_files.push(files[i]);
     }
     rotated_files.sort().reverse();
 
-    for (var i = rotated_files.length - 1; i >= 0; i--) {
-      if (RETAIN > i) return ;
-
-      fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
-        if (err) return console.error(err);
-        console.log('"' + rotated_files[i] + '" has been deleted');
-      });
-    };
+    for (i = rotated_files.length - 1; i >= RETAIN; i--) {
+      (function(i) {
+        fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
+          if (err) return console.error(err);
+          console.log('"' + rotated_files[i] + '" has been deleted');
+        });
+      })(i);
+    }
   });
 }
 
@@ -107,16 +107,16 @@ function proceed(file) {
   
 
   // listen for error
-  readStream.on('error', pmx.notify.bind(this))
-  writeStream.on('error', pmx.notify.bind(this))
+  readStream.on('error', pmx.notify.bind(this));
+  writeStream.on('error', pmx.notify.bind(this));
   if (COMPRESSION) {
-    GZIP.on('error', pmx.notify.bind(this))
+    GZIP.on('error', pmx.notify.bind(this));
   }
 
  // when the read is done, empty the file and check for retain option
   readStream.on('end', function() {
     if (GZIP) {
-      GZIP.close()
+      GZIP.close();
     }
     readStream.close();
     writeStream.close();
@@ -189,7 +189,7 @@ pm2.connect(function(err) {
         });
       });
   });
-})
+});
 
 /**  ACTION PMX **/
 pmx.action('list watched logs', function(reply) {
@@ -281,4 +281,4 @@ function handleUnit(bytes, precision) {
   } else {
     return bytes + ' B';
   }
-};
+}
