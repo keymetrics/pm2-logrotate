@@ -86,6 +86,12 @@ function delete_old(file) {
   });
 }
 
+
+/**
+ * Apply the rotation process of the log file.
+ *
+ * @param {string} file 
+ */
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
     + moment().format(DATE_FORMAT) + '.log';
@@ -130,6 +136,13 @@ function proceed(file) {
   });
 }
 
+
+/**
+ * Apply the rotation process if the `file` size exceeds the `SIZE_LIMIT`.
+ * 
+ * @param {string} file
+ * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
+ */
 function proceed_file(file, force) {
   if (!fs.existsSync(file)) return;
   
@@ -145,11 +158,25 @@ function proceed_file(file, force) {
   });
 }
 
+
+/**
+ * Apply the rotation process of all log files of `app` where the file size exceeds the`SIZE_LIMIT`.
+ * 
+ * @param {Object} app
+ * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
+ */
 function proceed_app(app, force) {
   // Check all log path
-  proceed_file(app.pm2_env.pm_out_log_path, force);
-  proceed_file(app.pm2_env.pm_err_log_path, force);
-  proceed_file(app.pm2_env.pm_log_path, force);
+  // Note: If same file is defined for multiple purposes, it will be processed once only.
+  if (app.pm2_env.pm_out_log_path) {
+    proceed_file(app.pm2_env.pm_out_log_path, force);
+  }
+  if (app.pm2_env.pm_err_log_path && app.pm2_env.pm_err_log_path !== app.pm2_env.pm_out_log_path) {
+    proceed_file(app.pm2_env.pm_err_log_path, force);
+  }
+  if (app.pm2_env.pm_log_path && app.pm2_env.pm_log_path !== app.pm2_env.pm_out_log_path && app.pm2_env.pm_log_path !== app.pm2_env.pm_err_log_path) {
+    proceed_file(app.pm2_env.pm_log_path, force);
+  }
 }
 
 // Connect to local PM2
