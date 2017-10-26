@@ -133,7 +133,9 @@ function proceed(file) {
 function proceed_file(file, force) {
   if (!fs.existsSync(file)) return;
   
-  WATCHED_FILES.push(file);
+  if (!WATCHED_FILES.includes(file)) {
+    WATCHED_FILES.push(file);
+  }
 
   fs.stat(file, function (err, data) {
     if (err) return console.error(err);
