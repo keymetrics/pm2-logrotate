@@ -107,10 +107,10 @@ function proceed(file) {
   
 
   // listen for error
-  readStream.on('error', pmx.notify.bind(this))
-  writeStream.on('error', pmx.notify.bind(this))
+  readStream.on('error', pmx.notify.bind(pmx))
+  writeStream.on('error', pmx.notify.bind(pmx))
   if (COMPRESSION) {
-    GZIP.on('error', pmx.notify.bind(this))
+    GZIP.on('error', pmx.notify.bind(pmx))
   }
 
  // when the read is done, empty the file and check for retain option
