@@ -4,7 +4,7 @@ var pmx     	= require('pmx');
 var pm2     	= require('pm2');
 var moment  	= require('moment-timezone');
 var scheduler	= require('node-schedule');
-var zlib        = require('zlib');
+var zlib      = require('zlib');
 
 var conf = pmx.initModule({
   widget : {
@@ -113,10 +113,10 @@ function proceed(file) {
   
 
   // listen for error
-  readStream.on('error', pmx.notify.bind(this));
-  writeStream.on('error', pmx.notify.bind(this));
+  readStream.on('error', pmx.notify.bind(pmx));
+  writeStream.on('error', pmx.notify.bind(pmx));
   if (COMPRESSION) {
-    GZIP.on('error', pmx.notify.bind(this));
+    GZIP.on('error', pmx.notify.bind(pmx));
   }
 
  // when the read is done, empty the file and check for retain option
