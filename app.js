@@ -46,7 +46,7 @@ var ROTATE_MODULE = JSON.parse(conf.rotateModule) || true;
 var WATCHED_FILES = [];
 
 function get_limit_size() {
-  if (conf.max_size == '')
+  if (conf.max_size === '')
     return (1024 * 1024 * 10);
   if (typeof(conf.max_size) !== 'string')
       conf.max_size = conf.max_size + "";
@@ -60,31 +60,38 @@ function get_limit_size() {
 }
 
 function delete_old(file) {
-  if (file == "/dev/null") return;
+  if (file === "/dev/null") return;
   var fileBaseName = file.substr(0, file.length - 4).split('/').pop() + "__";
   var dirName = path.dirname(file);
 
   fs.readdir(dirName, function(err, files) {
+    var i, len;
     if (err) return pmx.notify(err);
 
-    var rotated_files = []
-    for (var i = 0, len = files.length; i < len; i++) {
+    var rotated_files = [];
+    for (i = 0, len = files.length; i < len; i++) {
       if (files[i].indexOf(fileBaseName) >= 0)
         rotated_files.push(files[i]);
     }
     rotated_files.sort().reverse();
 
-    for (var i = rotated_files.length - 1; i >= 0; i--) {
-      if (RETAIN > i) return ;
-
-      fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
-        if (err) return console.error(err);
-        console.log('"' + rotated_files[i] + '" has been deleted');
-      });
-    };
+    for (i = rotated_files.length - 1; i >= RETAIN; i--) {
+      (function(i) {
+        fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
+          if (err) return console.error(err);
+          console.log('"' + rotated_files[i] + '" has been deleted');
+        });
+      })(i);
+    }
   });
 }
 
+
+/**
+ * Apply the rotation process of the log file.
+ *
+ * @param {string} file 
+ */
 function proceed(file) {
   var final_name = file.substr(0, file.length - 4) + '__'
     + moment().format(DATE_FORMAT) + '.log';
@@ -106,16 +113,16 @@ function proceed(file) {
   
 
   // listen for error
-  readStream.on('error', pmx.notify.bind(pmx))
-  writeStream.on('error', pmx.notify.bind(pmx))
+  readStream.on('error', pmx.notify.bind(pmx));
+  writeStream.on('error', pmx.notify.bind(pmx));
   if (COMPRESSION) {
-    GZIP.on('error', pmx.notify.bind(pmx))
+    GZIP.on('error', pmx.notify.bind(pmx));
   }
 
  // when the read is done, empty the file and check for retain option
   readStream.on('end', function() {
     if (GZIP) {
-      GZIP.close()
+      GZIP.close();
     }
     readStream.close();
     writeStream.close();
@@ -129,10 +136,19 @@ function proceed(file) {
   });
 }
 
+
+/**
+ * Apply the rotation process if the `file` size exceeds the `SIZE_LIMIT`.
+ * 
+ * @param {string} file
+ * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
+ */
 function proceed_file(file, force) {
   if (!fs.existsSync(file)) return;
   
-  WATCHED_FILES.push(file);
+  if (!WATCHED_FILES.includes(file)) {
+    WATCHED_FILES.push(file);
+  }
 
   fs.stat(file, function (err, data) {
     if (err) return console.error(err);
@@ -142,11 +158,25 @@ function proceed_file(file, force) {
   });
 }
 
+
+/**
+ * Apply the rotation process of all log files of `app` where the file size exceeds the`SIZE_LIMIT`.
+ * 
+ * @param {Object} app
+ * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
+ */
 function proceed_app(app, force) {
   // Check all log path
-  proceed_file(app.pm2_env.pm_out_log_path, force);
-  proceed_file(app.pm2_env.pm_err_log_path, force);
-  proceed_file(app.pm2_env.pm_log_path, force);
+  // Note: If same file is defined for multiple purposes, it will be processed once only.
+  if (app.pm2_env.pm_out_log_path) {
+    proceed_file(app.pm2_env.pm_out_log_path, force);
+  }
+  if (app.pm2_env.pm_err_log_path && app.pm2_env.pm_err_log_path !== app.pm2_env.pm_out_log_path) {
+    proceed_file(app.pm2_env.pm_err_log_path, force);
+  }
+  if (app.pm2_env.pm_log_path && app.pm2_env.pm_log_path !== app.pm2_env.pm_out_log_path && app.pm2_env.pm_log_path !== app.pm2_env.pm_err_log_path) {
+    proceed_file(app.pm2_env.pm_log_path, force);
+  }
 }
 
 // Connect to local PM2
@@ -188,7 +218,7 @@ pm2.connect(function(err) {
         });
       });
   });
-})
+});
 
 /**  ACTION PMX **/
 pmx.action('list watched logs', function(reply) {
@@ -280,4 +310,4 @@ function handleUnit(bytes, precision) {
   } else {
     return bytes + ' B';
   }
-};
+}
