@@ -42,6 +42,7 @@ var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at 
 var RETAIN = isNaN(parseInt(conf.retain)) ? undefined : parseInt(conf.retain); // All
 var COMPRESSION = JSON.parse(conf.compress) || false; // Do not compress by default
 var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
+var TZ = conf.TZ;
 var ROTATE_MODULE = JSON.parse(conf.rotateModule) || true;
 var WATCHED_FILES = [];
 
@@ -93,8 +94,17 @@ function delete_old(file) {
  * @param {string} file 
  */
 function proceed(file) {
-  var final_name = file.substr(0, file.length - 4) + '__'
-    + moment().format(DATE_FORMAT) + '.log';
+  // set default final time
+  var final_time = moment().format(DATE_FORMAT);
+  // check for a timezone
+  if (TZ) {
+    try {
+      final_time = moment().tz(TZ).format(DATE_FORMAT);
+    } catch(err) {
+      // use default
+    }
+  }
+  var final_name = file.substr(0, file.length - 4) + '__' + final_time + '.log';
   // if compression is enabled, add gz extention and create a gzip instance
   if (COMPRESSION) {
     var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
