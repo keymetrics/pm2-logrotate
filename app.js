@@ -120,7 +120,7 @@ function proceed(file) {
   }
 
  // when the read is done, empty the file and check for retain option
-  readStream.on('end', function() {
+  writeStream.on('finish', function() {
     if (GZIP) {
       GZIP.close();
     }
