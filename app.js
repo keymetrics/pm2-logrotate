@@ -156,7 +156,7 @@ function proceed(file) {
 function proceed_file(file, force) {
   if (!fs.existsSync(file)) return;
   
-  if (!WATCHED_FILES.includes(file)) {
+  if (WATCHED_FILES.indexOf(file) === -1) {
     WATCHED_FILES.push(file);
   }
 
