@@ -11,6 +11,8 @@ To install a specific version use the `@<version>` suffix
 
     pm2 install pm2-logrotate@2.2.0
 
+**NOTE:** the command is `pm2 install` NOT `npm install`
+
 ## Configure
 
 - `max_size` (Defaults to `10M`): When a file size becomes higher than this value it will rotate it (its possible that the worker check the file after it actually pass the limit) . You can specify the unit at then end: `10G`, `10M`, `10K`
