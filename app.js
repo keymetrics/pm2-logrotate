@@ -104,7 +104,7 @@ function proceed(file) {
       // use default
     }
   }
-  var final_name = file.substr(0, file.length - 4) + '__' + final_time + '.log';
+  var final_name = file.replace(/.([^.]*)$/,'_$1') + '__' + final_time + '.log'; // replace last dot with underscore
   // if compression is enabled, add gz extention and create a gzip instance
   if (COMPRESSION) {
     var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
