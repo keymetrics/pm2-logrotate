@@ -35,6 +35,7 @@
     "retain": "30",
     "compress": false,
     "dateFormat": "YYYY-MM-DD_HH-mm-ss",
+    "filenameFormat": "{originalName}__{date}.log",
     "workerInterval": "30",
     "rotateInterval": "0 0 * * *",
     "rotateModule": true

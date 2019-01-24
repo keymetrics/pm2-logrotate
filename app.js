@@ -35,13 +35,14 @@ else if (process.env.HOME && !process.env.HOMEPATH)
 else if (process.env.HOME || process.env.HOMEPATH)
   PM2_ROOT_PATH = path.resolve(process.env.HOMEDRIVE, process.env.HOME || process.env.HOMEPATH, '.pm2');
 
-var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 : 
+var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 :
                             parseInt(conf.workerInterval) * 1000; // default: 30 secs
 var SIZE_LIMIT = get_limit_size(); // default : 10MB
 var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
 var RETAIN = isNaN(parseInt(conf.retain)) ? undefined : parseInt(conf.retain); // All
 var COMPRESSION = JSON.parse(conf.compress) || false; // Do not compress by default
 var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
+var FILENAME_FORMAT = conf.filenameFormat || '{originalName}__{date}.log';
 var TZ = conf.TZ;
 var ROTATE_MODULE = JSON.parse(conf.rotateModule) || true;
 var WATCHED_FILES = [];
@@ -91,7 +92,7 @@ function delete_old(file) {
 /**
  * Apply the rotation process of the log file.
  *
- * @param {string} file 
+ * @param {string} file
  */
 function proceed(file) {
   // set default final time
@@ -104,7 +105,9 @@ function proceed(file) {
       // use default
     }
   }
-  var final_name = file.substr(0, file.length - 4) + '__' + final_time + '.log';
+  var original_name = file.substr(0, file.length - 4)
+  var final_name =  FILENAME_FORMAT.replace('{originalName}', original_name)
+    .replace('{date}', final_time)
   // if compression is enabled, add gz extention and create a gzip instance
   if (COMPRESSION) {
     var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
@@ -118,9 +121,9 @@ function proceed(file) {
   // pipe all stream
   if (COMPRESSION)
     readStream.pipe(GZIP).pipe(writeStream);
-  else 
+  else
     readStream.pipe(writeStream);
-  
+
 
   // listen for error
   readStream.on('error', pmx.notify.bind(pmx));
@@ -140,7 +143,7 @@ function proceed(file) {
       if (err) return pmx.notify(err);
       console.log('"' + final_name + '" has been created');
 
-      if (typeof(RETAIN) === 'number') 
+      if (typeof(RETAIN) === 'number')
         delete_old(file);
     });
   });
@@ -149,13 +152,13 @@ function proceed(file) {
 
 /**
  * Apply the rotation process if the `file` size exceeds the `SIZE_LIMIT`.
- * 
+ *
  * @param {string} file
  * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
  */
 function proceed_file(file, force) {
   if (!fs.existsSync(file)) return;
-  
+
   if (!WATCHED_FILES.includes(file)) {
     WATCHED_FILES.push(file);
   }
@@ -163,7 +166,7 @@ function proceed_file(file, force) {
   fs.stat(file, function (err, data) {
     if (err) return console.error(err);
 
-    if (data.size > 0 && (data.size >= SIZE_LIMIT || force)) 
+    if (data.size > 0 && (data.size >= SIZE_LIMIT || force))
       proceed(file);
   });
 }
@@ -171,7 +174,7 @@ function proceed_file(file, force) {
 
 /**
  * Apply the rotation process of all log files of `app` where the file size exceeds the`SIZE_LIMIT`.
- * 
+ *
  * @param {Object} app
  * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
  */
@@ -203,7 +206,7 @@ pm2.connect(function(err) {
       apps.forEach(function(app) {
           // if its a module and the rotate of module is disabled, ignore
           if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
-          
+
           proceed_app(app, false);
       });
     });
