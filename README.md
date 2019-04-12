@@ -22,21 +22,19 @@ To install a specific version use the `@<version>` suffix
 - `rotateModule` (Defaults to `true`) : Rotate the log of pm2's module like other apps
 - `workerInterval` (Defaults to `30` in secs) : You can control at which interval the worker is checking the log's size (minimum is `1`)
 - `rotateInterval` (Defaults to `0 0 * * *` everyday at midnight): This cron is used to a force rotate when executed.
-We are using [node-schedule](https://github.com/node-schedule/node-schedule) to schedule cron, so all valid cron for [node-schedule](https://github.com/node-schedule/node-schedule) is valid cron for this option. Cron style :
+We are using [node-schedule](https://github.com/node-schedule/node-schedule) to schedule cron, so all valid cron for [node-schedule](https://github.com/node-schedule/node-schedule) is valid cron for this option. Cron style:
+
+        *    *    *    *    *    *
+        ┬    ┬    ┬    ┬    ┬    ┬
+        │    │    │    │    │    |
+        │    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+        │    │    │    │    └───── month (1 - 12)
+        │    │    │    └────────── day of month (1 - 31)
+        │    │    └─────────────── hour (0 - 23)
+        │    └──────────────────── minute (0 - 59)
+        └───────────────────────── second (0 - 59, OPTIONAL)
+
 - `TZ` (Defaults to system time): This is the standard [tz database timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used to offset the log file saved. For instance, a value of `Etc/GMT-1`, with an hourly log, will save a file at hour `14` GMT with hour `13` GMT-1 in the log name.
-
-```
-*    *    *    *    *    *
-┬    ┬    ┬    ┬    ┬    ┬
-│    │    │    │    │    |
-│    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
-│    │    │    │    └───── month (1 - 12)
-│    │    │    └────────── day of month (1 - 31)
-│    │    └─────────────── hour (0 - 23)
-│    └──────────────────── minute (0 - 59)
-└───────────────────────── second (0 - 59, OPTIONAL)
-```
-
 ### How to set these values ?
 
  After having installed the module you have to type :
