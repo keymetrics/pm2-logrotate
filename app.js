@@ -199,10 +199,16 @@ pm2.connect(function(err) {
     pm2.list(function(err, apps) {
       if (err) return console.error(err.stack || err);
 
+      var appMap = {};
       // rotate log that are bigger than the limit
       apps.forEach(function(app) {
           // if its a module and the rotate of module is disabled, ignore
           if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
+
+          // if apps instances are multi and one of the instances has rotated, ignore
+          if(app.pm2_env.instances > 1 && appMap[app.name]) return;
+          
+          appMap[app.name] = app;
           
           proceed_app(app, false);
       });
@@ -219,10 +225,16 @@ pm2.connect(function(err) {
     pm2.list(function(err, apps) {
         if (err) return console.error(err.stack || err);
 
+        var appMap = {};
         // force rotate for each app
         apps.forEach(function(app) {
           // if its a module and the rotate of module is disabled, ignore
           if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
+
+          // if apps instances are multi and one of the instances has rotated, ignore
+          if(app.pm2_env.instances > 1 && appMap[app.name]) return;
+
+          appMap[app.name] = app;
 
           proceed_app(app, true);
         });

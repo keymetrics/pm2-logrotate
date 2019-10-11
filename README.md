@@ -9,7 +9,7 @@ PM2 module to automatically rotate logs of processes managed by PM2.
 
 To install a specific version use the `@<version>` suffix
 
-    pm2 install pm2-logrotate@2.2.0
+    pm2 install pm2-logrotate
 
 **NOTE:** the command is `pm2 install` NOT `npm install`
 
@@ -21,9 +21,10 @@ To install a specific version use the `@<version>` suffix
 - `dateFormat` (Defaults to `YYYY-MM-DD_HH-mm-ss`) : Format of the data used the name the file of log
 - `rotateModule` (Defaults to `true`) : Rotate the log of pm2's module like other apps
 - `workerInterval` (Defaults to `30` in secs) : You can control at which interval the worker is checking the log's size (minimum is `1`)
-- `rotateInterval` (Defaults to `0 0 * * *` everyday at midnight): This cron is used to a force rotate when executed.
-We are using [node-schedule](https://github.com/node-schedule/node-schedule) to schedule cron, so all valid cron for [node-schedule](https://github.com/node-schedule/node-schedule) is valid cron for this option. Cron style:
+- `rotateInterval` (Defaults to `0 0 * * *` everyday at midnight): This cron is used to a force rotate when executed. We are using [node-schedule](https://github.com/node-schedule/node-schedule) to schedule cron, so all valid cron for [node-schedule](https://github.com/node-schedule/node-schedule) is valid cron for this option. Cron style :
+- `TZ` (Defaults to system time): This is the standard [tz database timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used to offset the log file saved. For instance, a value of `Etc/GMT-1`, with an hourly log, will save a file at hour `14` GMT with hour `13` GMT-1 in the log name.
 
+```
         *    *    *    *    *    *
         ┬    ┬    ┬    ┬    ┬    ┬
         │    │    │    │    │    |
@@ -33,8 +34,8 @@ We are using [node-schedule](https://github.com/node-schedule/node-schedule) to 
         │    │    └─────────────── hour (0 - 23)
         │    └──────────────────── minute (0 - 59)
         └───────────────────────── second (0 - 59, OPTIONAL)
+```
 
-- `TZ` (Defaults to system time): This is the standard [tz database timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used to offset the log file saved. For instance, a value of `Etc/GMT-1`, with an hourly log, will save a file at hour `14` GMT with hour `13` GMT-1 in the log name.
 ### How to set these values ?
 
  After having installed the module you have to type :
