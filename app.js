@@ -62,27 +62,52 @@ function get_limit_size() {
 
 function delete_old(file) {
   if (file === "/dev/null") return;
-  var fileBaseName = file.substr(0, file.length - 4).split('/').pop() + "__";
   var dirName = path.dirname(file);
+  var fileBaseNames = [];
 
   fs.readdir(dirName, function(err, files) {
     var i, len;
     if (err) return pmx.notify(err);
 
-    var rotated_files = [];
-    for (i = 0, len = files.length; i < len; i++) {
-      if (files[i].indexOf(fileBaseName) >= 0)
-        rotated_files.push(files[i]);
-    }
-    rotated_files.sort().reverse();
+    var x, length, currentFileName, fileNameRegex;
+    for (x = 0, length = files.length; x < length; x++ ) {
+      currentFileName = files[x];
 
-    for (i = rotated_files.length - 1; i >= RETAIN; i--) {
-      (function(i) {
-        fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
-          if (err) return console.error(err);
-          console.log('"' + rotated_files[i] + '" has been deleted');
-        });
-      })(i);
+      if (currentFileName.indexOf('__') >= 0) {
+        fileNameRegex = currentFileName.split('__')[0];
+      } else {
+        fileNameRegex = currentFileName.substr(0, currentFileName.length - 4);
+      }
+
+      if (!fileBaseNames.includes(fileNameRegex)) {
+        fileBaseNames.push(fileNameRegex);
+      }
+    }
+
+    var y, fileBaseNamesLength;
+    var rotated_files, fileBaseName;
+
+    for (y = 0, fileBaseNamesLength = fileBaseNames.length; y < fileBaseNamesLength; y++) {
+      rotated_files = [];
+      fileBaseName = fileBaseNames[y];
+
+      for (i = 0, len = files.length; i < len; i++) {
+        if (files[i].indexOf(fileBaseName) >= 0 && files[i].indexOf('__') >= 0) {
+          rotated_files.push(files[i]);
+        }
+      }
+
+      rotated_files.sort().reverse();
+
+      for (i = rotated_files.length - 1; i >= RETAIN; i--) {
+        console.log("Deleting : ", rotated_files[i]);
+        (function(i) {
+          fs.unlink(path.resolve(dirName, rotated_files[i]), function (err) {
+            if (err) return console.error(err);
+            console.log('"' + rotated_files[i] + '" has been deleted');
+          });
+        })(i);
+      }
     }
   });
 }
