@@ -62,7 +62,7 @@ function get_limit_size() {
 
 function delete_old(file) {
   if (file === "/dev/null") return;
-  var fileBaseName = path.basename(file, '.log') + "__";
+  var fileBaseName = path.basename(file, '.log') + "_log" + "__";
   var dirName = path.dirname(file);
 
   fs.readdir(dirName, function(err, files) {
