@@ -13,6 +13,7 @@ PM2 module to automatically rotate logs of processes managed by PM2.
 
 - `max_size` (Defaults to `10M`): When a file size becomes higher than this value it will rotate it (its possible that the worker check the file after it actually pass the limit) . You can specify the unit at then end: `10G`, `10M`, `10K`
 - `retain` (Defaults to `30` file logs): This number is the number of rotated logs that are keep at any one time, it means that if you have retain = 7 you will have at most 7 rotated logs and your current one.
+- `enableRetain` (Defaults to `true`): This feature if it is equal to `false`, the` retain` function will not be used
 - `compress` (Defaults to `false`): Enable compression via gzip for all rotated logs
 - `dateFormat` (Defaults to `YYYY-MM-DD_HH-mm-ss`) : Format of the data used the name the file of log
 - `rotateModule` (Defaults to `true`) : Rotate the log of pm2's module like other apps
