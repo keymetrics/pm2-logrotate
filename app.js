@@ -62,7 +62,7 @@ function get_limit_size() {
 
 function delete_old(file) {
   if (file === "/dev/null") return;
-  var fileBaseName = file.substr(0, file.length - 4).split('/').pop() + "__";
+  var fileBaseName = file.substr(0, file.length - 4).replace(/\\/g,'/').split('/').pop() + "__";
   var dirName = path.dirname(file);
 
   fs.readdir(dirName, function(err, files) {
