@@ -189,6 +189,15 @@ function proceed_app(app, force) {
   }
 }
 
+function has_same_logs(app1, app2) {
+  // return true only if all log paths are identical
+  if (!app1 || !app2) return false;
+  if (app1.pm2_env.pm_out_log_path !== app2.pm2_env.pm_out_log_path) return false;
+  if (app1.pm2_env.pm_err_log_path !== app2.pm2_env.pm_err_log_path) return false;
+  if (app1.pm2_env.pm_log_path !== app2.pm2_env.pm_log_path) return false;
+  return true;
+}
+
 // Connect to local PM2
 pm2.connect(function(err) {
   if (err) return console.error(err.stack || err);
@@ -205,8 +214,8 @@ pm2.connect(function(err) {
           // if its a module and the rotate of module is disabled, ignore
           if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
 
-          // if apps instances are multi and one of the instances has rotated, ignore
-          if(app.pm2_env.instances > 1 && appMap[app.name]) return;
+          // if apps instances are multi and the logs of instances are combined, ignore
+          if(app.pm2_env.instances > 1 && has_same_logs(appMap[app.name], app)) return;
           
           appMap[app.name] = app;
           
