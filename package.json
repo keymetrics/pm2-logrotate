@@ -1,7 +1,7 @@
 {
   "name": "pm2-logrotate",
-  "version": "2.7.0",
-  "description": "Module to rotate logs of every pm2 application",
+  "version": "1.0.0",
+  "description": "Module to rotate logs of every pm2 application - derived from pm2-logrotate 2.7.0",
   "main": "app.js",
   "dependencies": {
     "graceful-fs": "^4.2.2",
@@ -13,15 +13,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Joni SHKURTI",
+  "author": "Joni SHKURTI and EDot",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pm2-hive/pm2-logrotate.git"
+    "url": "git+https://github.com/e-dot/pm2-logrotate.git"
   },
   "bugs": {
-    "url": "https://github.com/pm2-hive/pm2-logrotate/issues"
+    "url": "https://github.com/e-dot/pm2-logrotate/issues"
   },
-  "homepage": "https://github.com/pm2-hive/pm2-logrotate",
+  "homepage": "https://github.com/e-dot/pm2-logrotate",
   "license": "MIT",
   "apps": [
     {
