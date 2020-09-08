@@ -104,7 +104,12 @@ function proceed(file) {
       // use default
     }
   }
-  var final_name = file.substr(0, file.length - 4) + '__' + final_time + '.log';
+  // Get base file name - i.e. without file extension : remove everything after the last dot (up to then end of string)
+  var base_file_name = file.replace(/\.[^\.]+$/, '')
+  // Get file extension : replace everything by string after the last dot
+  var file_ext = file.replace(/^.*\.([^\.]*)$/i, '$1')
+  // Build final filename with base + time + extension
+  var final_name = base_file_name + '__' + final_time + '.' + file_ext;
   // if compression is enabled, add gz extention and create a gzip instance
   if (COMPRESSION) {
     var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
