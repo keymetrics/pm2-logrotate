@@ -1,11 +1,11 @@
 
 ## Description
 
-PM2 module to automatically rotate logs of processes managed by PM2.
+PM2 module to automatically rotate logs of processes managed by PM2. Also uploads the logs to GCP Storage
 
 ## Install
 
-    pm2 install pm2-logrotate
+    pm2 install pm2-logrotate-gs-upload
 
 **NOTE:** the command is `pm2 install` NOT `npm install`
 
@@ -18,6 +18,7 @@ PM2 module to automatically rotate logs of processes managed by PM2.
 - `rotateModule` (Defaults to `true`) : Rotate the log of pm2's module like other apps
 - `workerInterval` (Defaults to `30` in secs) : You can control at which interval the worker is checking the log's size (minimum is `1`)
 - `rotateInterval` (Defaults to `0 0 * * *` everyday at midnight): This cron is used to a force rotate when executed.
+- `bucketName` (Defaults to blank): File will be uploaded to Google Storage if bucket name is provided.
 We are using [node-schedule](https://github.com/node-schedule/node-schedule) to schedule cron, so all valid cron for [node-schedule](https://github.com/node-schedule/node-schedule) is valid cron for this option. Cron style :
 - `TZ` (Defaults to system time): This is the standard [tz database timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used to offset the log file saved. For instance, a value of `Etc/GMT+1`, with an hourly log, will save a file at hour `14` GMT with hour `13` (GMT+1) in the log name.
 
@@ -36,9 +37,9 @@ We are using [node-schedule](https://github.com/node-schedule/node-schedule) to 
 ### How to set these values ?
 
  After having installed the module you have to type :
-`pm2 set pm2-logrotate:<param> <value>`
+`pm2 set pm2-logrotate-gs-upload:<param> <value>`
 
 e.g:
-- `pm2 set pm2-logrotate:max_size 1K` (1KB)
-- `pm2 set pm2-logrotate:compress true` (compress logs when rotated)
-- `pm2 set pm2-logrotate:rotateInterval '*/1 * * * *'` (force rotate every minute)
+- `pm2 set pm2-logrotate-gs-upload:max_size 1K` (1KB)
+- `pm2 set pm2-logrotate-gs-upload:compress true` (compress logs when rotated)
+- `pm2 set pm2-logrotate-gs-upload:rotateInterval '*/1 * * * *'` (force rotate every minute)
