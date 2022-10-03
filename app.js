@@ -51,11 +51,11 @@ function get_limit_size() {
     return (1024 * 1024 * 10);
   if (typeof(conf.max_size) !== 'string')
       conf.max_size = conf.max_size + "";
-  if (conf.max_size.slice(-1) === 'G')
+  if (/GB?$/i.test(conf.max_size))
     return (parseInt(conf.max_size) * 1024 * 1024 * 1024);
-  if (conf.max_size.slice(-1) === 'M')
+  if (/MB?$/i.test(conf.max_size))
     return (parseInt(conf.max_size) * 1024 * 1024);
-  if (conf.max_size.slice(-1) === 'K')
+  if (/KB?$/i.test(conf.max_size))
     return (parseInt(conf.max_size) * 1024);
   return parseInt(conf.max_size);
 }
