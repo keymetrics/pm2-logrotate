@@ -33,6 +33,10 @@ We are using [node-schedule](https://github.com/node-schedule/node-schedule) to 
 └───────────────────────── second (0 - 59, OPTIONAL)
 ```
 
+### How to view current configuration of the above values ?
+After having installed the module, you have to type :
+`pm2 conf`
+
 ### How to set these values ?
 
  After having installed the module you have to type :
