@@ -35,7 +35,7 @@ else if (process.env.HOME && !process.env.HOMEPATH)
 else if (process.env.HOME || process.env.HOMEPATH)
   PM2_ROOT_PATH = path.resolve(process.env.HOMEDRIVE, process.env.HOME || process.env.HOMEPATH, '.pm2');
 
-var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 : 
+var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 :
                             parseInt(conf.workerInterval) * 1000; // default: 30 secs
 var SIZE_LIMIT = get_limit_size(); // default : 10MB
 var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
@@ -91,7 +91,7 @@ function delete_old(file) {
 /**
  * Apply the rotation process of the log file.
  *
- * @param {string} file 
+ * @param {string} file
  */
 function proceed(file) {
   // set default final time
@@ -105,57 +105,59 @@ function proceed(file) {
     }
   }
   var final_name = file.substr(0, file.length - 4) + '__' + final_time + '.log';
-  // if compression is enabled, add gz extention and create a gzip instance
-  if (COMPRESSION) {
-    var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
-    final_name += ".gz";
-  }
 
-  // create our read/write streams
-	var readStream = fs.createReadStream(file);
-	var writeStream = fs.createWriteStream(final_name, {'flags': 'w+'});
+  // first rotate file, then compress if need
+  fs.copyFile(file, final_name, function (err) {
+    if (err) return pmx.notify(err)
 
-  // pipe all stream
-  if (COMPRESSION)
-    readStream.pipe(GZIP).pipe(writeStream);
-  else 
-    readStream.pipe(writeStream);
-  
+    fs.truncate(file, function (err) {
+      if (err) return pmx.notify(err)
 
-  // listen for error
+      // check for retain option
+      if (typeof (RETAIN) === 'number')
+        delete_old(file);
+
+      if (COMPRESSION) {
+        compress(final_name)
+      } else {
+        console.log('"' + final_name + '" has been created');
+      }
+    })
+  })
+}
+
+function compress(file) {
+  var final_name = file + '.gz';
+
+  var readStream = fs.createReadStream(file);
+  var writeStream = fs.createWriteStream(final_name, { 'flags': 'w+' });
+  var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
+
   readStream.on('error', pmx.notify.bind(pmx));
   writeStream.on('error', pmx.notify.bind(pmx));
-  if (COMPRESSION) {
-    GZIP.on('error', pmx.notify.bind(pmx));
-  }
+  GZIP.on('error', pmx.notify.bind(pmx));
 
- // when the read is done, empty the file and check for retain option
-  writeStream.on('finish', function() {
-    if (GZIP) {
-      GZIP.close();
-    }
+  readStream.pipe(GZIP).pipe(writeStream);
+
+  writeStream.on('finish', function () {
+    GZIP.close();
     readStream.close();
     writeStream.close();
-    fs.truncate(file, function (err) {
-      if (err) return pmx.notify(err);
-      console.log('"' + final_name + '" has been created');
 
-      if (typeof(RETAIN) === 'number') 
-        delete_old(file);
-    });
+    console.log('"' + final_name + '" has been created');
   });
 }
 
 
 /**
  * Apply the rotation process if the `file` size exceeds the `SIZE_LIMIT`.
- * 
+ *
  * @param {string} file
  * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
  */
 function proceed_file(file, force) {
   if (!fs.existsSync(file)) return;
-  
+
   if (!WATCHED_FILES.includes(file)) {
     WATCHED_FILES.push(file);
   }
@@ -163,7 +165,7 @@ function proceed_file(file, force) {
   fs.stat(file, function (err, data) {
     if (err) return console.error(err);
 
-    if (data.size > 0 && (data.size >= SIZE_LIMIT || force)) 
+    if (data.size > 0 && (data.size >= SIZE_LIMIT || force))
       proceed(file);
   });
 }
@@ -171,7 +173,7 @@ function proceed_file(file, force) {
 
 /**
  * Apply the rotation process of all log files of `app` where the file size exceeds the`SIZE_LIMIT`.
- * 
+ *
  * @param {Object} app
  * @param {boolean} force - Do not check the SIZE_LIMIT and rotate everytime.
  */
@@ -207,9 +209,9 @@ pm2.connect(function(err) {
 
           // if apps instances are multi and one of the instances has rotated, ignore
           if(app.pm2_env.instances > 1 && appMap[app.name]) return;
-          
+
           appMap[app.name] = app;
-          
+
           proceed_app(app, false);
       });
     });
