@@ -40,6 +40,7 @@ var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 :
 var SIZE_LIMIT = get_limit_size(); // default : 10MB
 var ROTATE_CRON = conf.rotateInterval || "0 0 * * *"; // default : every day at midnight
 var RETAIN = isNaN(parseInt(conf.retain)) ? undefined : parseInt(conf.retain); // All
+var ENABLE_RETAIN = JSON.parse(conf.enableRetain) || true;
 var COMPRESSION = JSON.parse(conf.compress) || false; // Do not compress by default
 var DATE_FORMAT = conf.dateFormat || 'YYYY-MM-DD_HH-mm-ss';
 var TZ = conf.TZ;
@@ -140,7 +141,7 @@ function proceed(file) {
       if (err) return pmx.notify(err);
       console.log('"' + final_name + '" has been created');
 
-      if (typeof(RETAIN) === 'number') 
+      if (ENABLE_RETAIN === true && typeof(RETAIN) === 'number')
         delete_old(file);
     });
   });

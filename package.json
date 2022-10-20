@@ -33,6 +33,7 @@
   "config": {
     "max_size": "10M",
     "retain": "30",
+    "enableRetain": true,
     "compress": false,
     "dateFormat": "YYYY-MM-DD_HH-mm-ss",
     "workerInterval": "30",
