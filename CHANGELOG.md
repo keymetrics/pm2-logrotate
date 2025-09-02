@@ -1,4 +1,9 @@
 
+# 3.0.0
+
+- Update deps
+- Windows behavior fix
+
 # 2.7.0
 
 - [#129] fix overwrite logs in cluster mode (@EllieSummer)
