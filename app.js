@@ -41,6 +41,7 @@ const parseBool = (str, defaultVal = false) => {
   return defaultVal;
 };
 
+const extension = conf.extension || '.log';
 var WORKER_INTERVAL = isNaN(parseInt(conf.workerInterval)) ? 30 * 1000 : 
                             parseInt(conf.workerInterval) * 1000; // default: 30 secs
 var SIZE_LIMIT = get_limit_size(); // default : 10MB
@@ -68,7 +69,7 @@ function get_limit_size() {
 
 function delete_old(file) {
   if (file === "/dev/null") return;
-  var fileBaseName = path.basename(file, '.log') + "__";
+  var fileBaseName = path.basename(file, extension) + "__";
   var dirName = path.dirname(file);
 
   fs.readdir(dirName, function(err, files) {
@@ -110,7 +111,7 @@ function proceed(file) {
       // use default
     }
   }
-  var final_name = file.substr(0, file.length - 4) + '__' + final_time + '.log';
+  var final_name = file.substr(0, file.length - extension.length) + '__' + final_time + extension;
   // if compression is enabled, add gz extention and create a gzip instance
   if (COMPRESSION) {
     var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
@@ -221,7 +222,7 @@ pm2.connect(function(err) {
     });
 
     // rotate pm2 log
-    proceed_file(PM2_ROOT_PATH + '/pm2.log', false);
+    proceed_file(process.env.PM2_LOG_FILE_PATH || (PM2_ROOT_PATH + '/pm2.log'), false);
     proceed_file(PM2_ROOT_PATH + '/agent.log', false);
   }, WORKER_INTERVAL);
 
