@@ -195,6 +195,35 @@ function proceed_app(app, force) {
   }
 }
 
+function get_log_paths(app) {
+  var paths = [];
+
+  if (app.pm2_env.pm_out_log_path) {
+    paths.push(app.pm2_env.pm_out_log_path);
+  }
+  if (app.pm2_env.pm_err_log_path && app.pm2_env.pm_err_log_path !== app.pm2_env.pm_out_log_path) {
+    paths.push(app.pm2_env.pm_err_log_path);
+  }
+  if (app.pm2_env.pm_log_path && app.pm2_env.pm_log_path !== app.pm2_env.pm_out_log_path && app.pm2_env.pm_log_path !== app.pm2_env.pm_err_log_path) {
+    paths.push(app.pm2_env.pm_log_path);
+  }
+
+  return paths;
+}
+
+function mark_new_paths(paths, map) {
+  var hasNew = false;
+
+  paths.forEach(function(p) {
+    if (!map[p]) {
+      map[p] = true;
+      hasNew = true;
+    }
+  });
+
+  return hasNew;
+}
+
 // Connect to local PM2
 pm2.connect(function(err) {
   if (err) return console.error(err.stack || err);
@@ -205,17 +234,15 @@ pm2.connect(function(err) {
     pm2.list(function(err, apps) {
       if (err) return console.error(err.stack || err);
 
-      var appMap = {};
+      var logMap = {};
       // rotate log that are bigger than the limit
       apps.forEach(function(app) {
           // if its a module and the rotate of module is disabled, ignore
           if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
 
-          // if apps instances are multi and one of the instances has rotated, ignore
-          if(app.pm2_env.instances > 1 && appMap[app.name]) return;
-          
-          appMap[app.name] = app;
-          
+          var paths = get_log_paths(app);
+          if (paths.length && !mark_new_paths(paths, logMap)) return;
+
           proceed_app(app, false);
       });
     });
@@ -231,16 +258,14 @@ pm2.connect(function(err) {
     pm2.list(function(err, apps) {
         if (err) return console.error(err.stack || err);
 
-        var appMap = {};
+        var logMap = {};
         // force rotate for each app
         apps.forEach(function(app) {
           // if its a module and the rotate of module is disabled, ignore
           if (typeof(app.pm2_env.axm_options.isModule) !== 'undefined' && !ROTATE_MODULE) return ;
 
-          // if apps instances are multi and one of the instances has rotated, ignore
-          if(app.pm2_env.instances > 1 && appMap[app.name]) return;
-
-          appMap[app.name] = app;
+          var paths = get_log_paths(app);
+          if (paths.length && !mark_new_paths(paths, logMap)) return;
 
           proceed_app(app, true);
         });
