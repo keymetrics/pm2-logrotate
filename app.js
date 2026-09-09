@@ -4,7 +4,7 @@ var pmx     	= require('pmx');
 var pm2     	= require('pm2');
 var moment  	= require('moment-timezone');
 var scheduler	= require('node-schedule');
-var zlib      = require('zlib');
+var rotateFile = require('./lib/rotate')(fs);
 
 var conf = pmx.initModule({
   widget : {
@@ -111,44 +111,19 @@ function proceed(file) {
     }
   }
   var final_name = file.substr(0, file.length - 4) + '__' + final_time + '.log';
-  // if compression is enabled, add gz extention and create a gzip instance
+  // if compression is enabled, add gz extension
   if (COMPRESSION) {
-    var GZIP = zlib.createGzip({ level: zlib.Z_BEST_COMPRESSION, memLevel: zlib.Z_BEST_COMPRESSION });
     final_name += ".gz";
   }
-
-  // create our read/write streams
-	var readStream = fs.createReadStream(file);
-	var writeStream = fs.createWriteStream(final_name, {'flags': 'w+'});
-
-  // pipe all stream
-  if (COMPRESSION)
-    readStream.pipe(GZIP).pipe(writeStream);
-  else 
-    readStream.pipe(writeStream);
-  
-
-  // listen for error
-  readStream.on('error', pmx.notify.bind(pmx));
-  writeStream.on('error', pmx.notify.bind(pmx));
-  if (COMPRESSION) {
-    GZIP.on('error', pmx.notify.bind(pmx));
-  }
-
- // when the read is done, empty the file and check for retain option
-  writeStream.on('finish', function() {
-    if (GZIP) {
-      GZIP.close();
+  rotateFile(file, final_name, COMPRESSION, function(err) {
+    if (err) {
+      pmx.notify(err);
+      if (err.cleanupError) pmx.notify(err.cleanupError);
+      if (err.closeError) pmx.notify(err.closeError);
+      return;
     }
-    readStream.close();
-    writeStream.close();
-    fs.truncate(file, function (err) {
-      if (err) return pmx.notify(err);
-      console.log('"' + final_name + '" has been created');
-
-      if (typeof(RETAIN) === 'number') 
-        delete_old(file);
-    });
+    console.log('"' + final_name + '" has been created');
+    if (typeof(RETAIN) === 'number') delete_old(file);
   });
 }
 
