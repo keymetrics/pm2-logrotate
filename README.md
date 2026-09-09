@@ -46,3 +46,27 @@ e.g:
 - `pm2 set pm2-logrotate:max_size 1K` (1KB)
 - `pm2 set pm2-logrotate:compress true` (compress logs when rotated)
 - `pm2 set pm2-logrotate:rotateInterval '*/1 * * * *'` (force rotate every minute)
+
+### Rotation behavior
+
+Size checks and scheduled rotations share a per-file lock. A trigger for a file
+already being rotated is skipped until copying and truncation finish; other
+files can still rotate. This lock is local to one module process, so do not run
+multiple rotators against the same files.
+
+Failed copies close their streams and attempt to remove the incomplete archive
+without truncating the source log. The lock is released so a later check can
+retry. Existing archive names are not overwritten: if your `dateFormat` produces
+the same name again, rotation reports a collision and retries on a later check.
+Use a format including seconds when rotating frequently. A completed archive is
+kept if truncating the source fails. Retention cleanup still runs after successful
+rotation; it is not a disk quota.
+
+Rotation still uses copy-and-truncate. Writes between the end of the copy and
+truncation may be lost; the lock does not eliminate that existing limitation.
+
+### Tests
+
+Run `npm test` with Node.js 16 or later. The tests use temporary files and injected
+slow/failing streams; they do not require a running PM2 daemon or installed npm
+dependencies. `test/test.js` remains a manual log-producing fixture.
